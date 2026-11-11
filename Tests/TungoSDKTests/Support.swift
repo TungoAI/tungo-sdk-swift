@@ -83,7 +83,7 @@ class MockTestCase: XCTestCase {
     }
 
     /// Waits until a condition holds (polling), failing the test after `timeout` seconds.
-    func eventually(_ what: String, timeout: TimeInterval = 10, _ condition: () -> Bool) async {
+    func eventually(_ what: String, timeout: TimeInterval = 10, _ condition: @escaping () -> Bool) async {
         let deadline = Date().addingTimeInterval(timeout)
         while !condition() {
             if Date() > deadline {
