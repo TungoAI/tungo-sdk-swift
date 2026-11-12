@@ -39,8 +39,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-14 ships Swift 5.10 (Xcode 15.4), macos-15 ships Swift 6.
-        os: [macos-14, macos-15]
+        # macos-15 ships Swift 6. Swift 5.10 is covered by the Linux job; GitHub no longer
+        # starts macos-14 jobs.
+        os: [macos-15]
     steps:
       - uses: actions/checkout@v4
       - name: Build the library, the tests and the examples
