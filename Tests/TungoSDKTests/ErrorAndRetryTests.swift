@@ -157,7 +157,13 @@ final class ErrorAndRetryTests: MockTestCase {
         let page = try await makeClient(recorder: recorder).chat.list()
         XCTAssertEqual(page.data.count, 1)
         XCTAssertEqual(server.requests.count, 2)
+        #if canImport(Darwin)
+        // URLSession on Apple platforms may resend an idempotent request itself after a
+        // reset, before the SDK sees the failure; then the SDK has nothing to wait for.
+        XCTAssertTrue(recorder.delays == [0.5] || recorder.delays.isEmpty, "\(recorder.delays)")
+        #else
         XCTAssertEqual(recorder.delays, [0.5])
+        #endif
     }
 
     func testTruncatedBodyIsAnError() async {

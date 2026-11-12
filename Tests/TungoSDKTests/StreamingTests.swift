@@ -241,12 +241,25 @@ final class StreamingTests: MockTestCase {
         var seen = 0
         do {
             for try await _ in try await makeClient().streamChat("hi") { seen += 1 }
+            #if canImport(Darwin)
+            // URLSession on Apple platforms reports a chunked body closed without its last
+            // chunk as a normal end, so plain iteration cannot tell; collect() below can.
+            #else
             XCTFail("a stream cut without its end must not look complete")
+            #endif
         } catch {
             XCTAssertTrue(error is ConnectionError, "\(error)")
         }
         XCTAssertEqual(seen, 1)
         XCTAssertEqual(server.requests.count, 1, "a started stream is never retried")
+        // On every platform a cut stream is never returned as a finished turn.
+        server.enqueue(response)
+        do {
+            let result = try await makeClient().streamChat("hi").collect()
+            XCTFail("a cut stream was returned as a finished turn: \(result.text)")
+        } catch {
+            XCTAssertTrue(error is ConnectionError || error is DecodeError, "\(error)")
+        }
     }
 
     func testIdleTimeout() async throws {
