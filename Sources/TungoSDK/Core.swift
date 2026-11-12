@@ -21,6 +21,9 @@ struct RequestSpec: Sendable {
     var auth: RequestAuth = .key
     /// The operation declares the Idempotency-Key header: the SDK generates a key.
     var idempotent = false
+    /// The key used instead of a random one when the caller gives none: the event id of a hook
+    /// event, because the API reads Idempotency-Key before X-Event-Id.
+    var defaultIdempotencyKey: String?
     /// A non-streaming chat turn: the long default timeout applies.
     var longRunning = false
 }
@@ -395,6 +398,9 @@ final class ClientCore: Sendable {
             throw ValidationError(message: "maxRetries must not be negative (got \(maxRetries)): use 0 to turn retries off.")
         }
         var idempotencyKey = options.idempotencyKey
+        if idempotencyKey == nil, spec.idempotent, let key = spec.defaultIdempotencyKey, !key.isEmpty {
+            idempotencyKey = key
+        }
         if idempotencyKey == nil, spec.idempotent {
             idempotencyKey = UUID().uuidString.lowercased()
         }

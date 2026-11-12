@@ -135,12 +135,23 @@ final class PaginationAndHelperTests: MockTestCase {
         XCTAssertNil(request.headers["x-api-key"])
         XCTAssertNil(request.headers["authorization"])
         XCTAssertEqual(request.headers["x-event-id"], "evt_1")
+        // The API reads Idempotency-Key before X-Event-Id: the event id must be the key.
+        XCTAssertEqual(request.headers["idempotency-key"], "evt_1")
         XCTAssertEqual(request.headers["content-type"], "application/json")
         let signature = try XCTUnwrap(request.headers["x-signature"])
         XCTAssertEqual(signature, try TungoWebhooks.hookSignatureHeader(body: body, secret: "hook-secret"))
         XCTAssertTrue(signature.hasPrefix("sha256="))
         XCTAssertTrue(TungoWebhooks.verifyHookSignature(body: body, signature: signature, secret: "hook-secret"))
         XCTAssertFalse(TungoWebhooks.verifyHookSignature(body: body + Data([0x20]), signature: signature, secret: "hook-secret"))
+    }
+
+    func testAKeyTheCallerGivesWinsOverTheHookEventID() async throws {
+        server.enqueue(.json(202, Fixture.hookAccepted))
+        _ = try await makeClient().sendHook(
+            token: "tok", body: Data("{}".utf8), eventID: "evt_1", options: RequestOptions(idempotencyKey: "own"))
+        let request = try XCTUnwrap(server.requests.first)
+        XCTAssertEqual(request.headers["idempotency-key"], "own")
+        XCTAssertEqual(request.headers["x-event-id"], "evt_1")
     }
 
     func testHookSignatureGoesToTheHeaderTheHookNames() async throws {

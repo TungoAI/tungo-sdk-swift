@@ -100,6 +100,7 @@ public struct AutomationsResource: Sendable {
         spec.body = body
         spec.contentType = contentType
         if let eventID { spec.headers["X-Event-Id"] = eventID }
+        spec.defaultIdempotencyKey = eventID
         let signatureName = try TungoWebhooks.signatureHeaderName(signatureHeader, default: "X-Signature")
         if let secret { spec.headers[signatureName] = try TungoWebhooks.hookSignatureHeader(body: body, secret: secret) }
         return try await core.send(spec, options: options, as: AutomationHookAccepted.self)
