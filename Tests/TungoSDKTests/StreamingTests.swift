@@ -32,6 +32,52 @@ final class StreamingTests: MockTestCase {
         XCTAssertEqual(try json(request.bodyText), try json(#"{"dialog_id":"dlg_7","message":"hi","stream":true}"#))
     }
 
+    /// A streaming call repeated with the same Idempotency-Key after its turn finished is answered with the
+    /// stored ChatTurnResult as JSON (conformance vectors, chat_stream_replay): the stream yields its events.
+    func testATurnReplayedByIdempotencyKeyArrivesAsItsEvents() async throws {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "vectors", withExtension: "json"))
+        let vectors = try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: url))
+        let replays = try XCTUnwrap(vectors["chat_stream_replay"]?.arrayValue)
+        XCTAssertFalse(replays.isEmpty)
+        for item in replays {
+            let label = item["name"]?.stringValue ?? "?"
+            let expect = try XCTUnwrap(item["expect"])
+            var headers: [String: String] = [:]
+            for (name, value) in item["headers"]?.objectValue ?? [:] { headers[name] = value.stringValue }
+            let body = String(decoding: try JSONEncoder().encode(try XCTUnwrap(item["body"])), as: UTF8.self)
+            let status = Int(try XCTUnwrap(item["status"]?.intValue))
+            server.enqueue(.json(status, body, headers: headers))
+            if expect["decode_error"]?.boolValue == true {
+                do {
+                    _ = try await makeClient(maxRetries: 0).streamChat("hi")
+                    XCTFail("\(label): a JSON answer that is not a replay is not a stream")
+                } catch let error as DecodeError {
+                    XCTAssertEqual(error.statusCode, status, label)
+                }
+                continue
+            }
+            let stream = try await makeClient(maxRetries: 0).streamChat("hi")
+            XCTAssertEqual(stream.dialogID, expect["dialog_id"]?.stringValue, label)
+            XCTAssertEqual(stream.turnNo.map { Int64($0) }, expect["turn_no"]?.intValue, label)
+            var turn = ChatAccumulator()
+            for try await event in stream { turn.add(event) }
+            XCTAssertEqual(turn.text, expect["text"]?.stringValue, label)
+            XCTAssertEqual(turn.stopReason, expect["stop_reason"]?.stringValue, label)
+            XCTAssertEqual(turn.costTiyn, expect["cost_tiyn"]?.intValue, label)
+            XCTAssertEqual(turn.choiceID, expect["choice_id"]?.stringValue, label)
+            XCTAssertEqual(turn.events.map { $0.typeTag ?? "" }, expect["event_types"]?.arrayValue?.compactMap { $0.stringValue }, label)
+            let usage = try turn.usage.map { try JSONValue(encoding: $0) } ?? .null
+            XCTAssertEqual(usage, expect["usage"] ?? .null, label)
+            if let wanted = expect["error"], !wanted.isNull {
+                let error = try XCTUnwrap(turn.error, label)
+                XCTAssertEqual(error.code, wanted["code"]?.stringValue, label)
+                XCTAssertEqual(error.requestID, wanted["request_id"]?.stringValue, label)
+            } else {
+                XCTAssertNil(turn.error, label)
+            }
+        }
+    }
+
     func testEventsArriveIncrementally() async throws {
         server.enqueue(.sse([MockChunk(Self.text1, pause: 1.5), MockChunk(Self.text2, pause: 1.5), MockChunk(Self.done)]))
         let started = Date()

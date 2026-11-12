@@ -341,6 +341,20 @@ final class ClientCore: Sendable {
                 let contentType = response.headers["Content-Type"] ?? ""
                 let mediaType = contentType.split(separator: ";", maxSplits: 1, omittingEmptySubsequences: false)[0]
                     .trimmingCharacters(in: .whitespaces).lowercased()
+                let replayed = (response.headers["Idempotent-Replayed"] ?? "").trimmingCharacters(in: .whitespaces).lowercased()
+                if mediaType == "application/json" && replayed == "true" {
+                    // A chat turn repeated with the same Idempotency-Key after it finished: the server answers
+                    // the stored ChatTurnResult instead of a stream. The caller gets the events of that turn.
+                    let body = try await ClientCore.withDeadline(errorLimit) { try await ClientCore.collect(response.body) }
+                    guard let replay = ClientCore.replayAsEventStream(response, body: body) else {
+                        throw DecodeError(
+                            message: "The API replayed HTTP \(response.statusCode) to a streaming call with a body "
+                                + "that is not a chat turn result.",
+                            statusCode: response.statusCode, requestID: response.headers["x-request-id"], body: body)
+                    }
+                    box.set(replay)
+                    return Attempt.finished(Buffered(statusCode: replay.statusCode, headers: replay.headers, body: Data()))
+                }
                 guard mediaType == "text/event-stream" else {
                     // For example a JSON answer, or the page of a proxy: zero events must not look like an empty stream.
                     let body = (try? await ClientCore.withDeadline(errorLimit) {
@@ -366,6 +380,62 @@ final class ClientCore: Sendable {
             throw ConnectionError(message: "The stream could not be opened.")
         }
         return response
+    }
+
+    /// Turns a replayed ChatTurnResult into the event stream of the turn it stands for: text (the answer),
+    /// proposal, question, citation, error and choice events, then done. The dialog id and the turn number,
+    /// which a replay carries only in the body, become the X-Dialog-Id and X-Turn-No headers when they are
+    /// missing. `nil` when the body is not a chat turn result.
+    static func replayAsEventStream(_ response: TungoHTTPResponse, body: Data) -> TungoHTTPResponse? {
+        guard case .object(let result)? = try? JSONDecoder().decode(JSONValue.self, from: body),
+              case .string(let dialogID)? = result["dialog_id"] else { return nil }
+        var headers = response.headers
+        if (headers["X-Dialog-Id"] ?? "").isEmpty { headers["X-Dialog-Id"] = dialogID }
+        if case .integer(let turnNo)? = result["turn_no"], (headers["X-Turn-No"] ?? "").isEmpty {
+            headers["X-Turn-No"] = String(turnNo)
+        }
+        var out = Data()
+        let encoder = JSONEncoder()
+        func emit(_ type: String, _ fields: [String: JSONValue]) {
+            var event = fields
+            event["type"] = .string(type)
+            guard let data = try? encoder.encode(JSONValue.object(event)) else { return }
+            out.append(Data("event: \(type)\ndata: ".utf8))
+            out.append(data)
+            out.append(Data("\n\n".utf8))
+        }
+        func entries(_ key: String) -> [[String: JSONValue]] {
+            guard case .array(let items)? = result[key] else { return [] }
+            return items.compactMap { item in
+                if case .object(let object) = item { return object }
+                return nil
+            }
+        }
+        var answer = ""
+        if case .string(let text)? = result["answer"] { answer = text }
+        if !answer.isEmpty { emit("text", ["delta": .string(answer)]) }
+        for var proposal in entries("proposals") {
+            proposal["proposal_id"] = proposal.removeValue(forKey: "id") ?? .null
+            emit("proposal", proposal)
+        }
+        for question in entries("questions") { emit("question", question) }
+        for citation in entries("citations") { emit("citation", citation) }
+        let requestID = response.headers["x-request-id"].flatMap { $0.isEmpty ? nil : $0 }
+        for error in entries("errors") {
+            emit("error", ["error": .object(error), "request_id": requestID.map { JSONValue.string($0) } ?? .null])
+        }
+        var done: [String: JSONValue] = ["answer": .string(answer)]
+        if case .string(let reason)? = result["stop_reason"] { done["stop_reason"] = .string(reason) }
+        if case .object(var usage)? = result["usage"] {
+            if let cost = usage.removeValue(forKey: "cost_tiyn") { done["cost_tiyn"] = cost }
+            done["usage"] = .object(usage)
+        }
+        if case .object(let pending)? = result["pending_question"] {
+            emit("choice", pending)
+            if let choiceID = pending["choice_id"] { done["choice_id"] = choiceID }
+        }
+        emit("done", done)
+        return TungoHTTPResponse(statusCode: response.statusCode, headers: headers, data: out)
     }
 
     private enum Attempt: Sendable {
