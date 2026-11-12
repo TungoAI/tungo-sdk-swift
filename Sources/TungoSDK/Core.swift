@@ -397,7 +397,9 @@ final class ClientCore: Sendable {
         guard maxRetries >= 0 else {
             throw ValidationError(message: "maxRetries must not be negative (got \(maxRetries)): use 0 to turn retries off.")
         }
-        var idempotencyKey = options.idempotencyKey
+        // A key goes only to an operation that declares the header: anywhere else the API ignores
+        // it, and sending it would make a retry look safe when it repeats the action.
+        var idempotencyKey = spec.idempotent ? options.idempotencyKey : nil
         if idempotencyKey == nil, spec.idempotent, let key = spec.defaultIdempotencyKey, !key.isEmpty {
             idempotencyKey = key
         }
@@ -481,6 +483,9 @@ final class ClientCore: Sendable {
         }
         for (name, value) in spec.headers { headers[name] = value }
         for (name, value) in options.headers { headers[name] = value }
+        if !spec.idempotent {
+            headers["Idempotency-Key"] = nil
+        }
         if let idempotencyKey {
             headers["Idempotency-Key"] = idempotencyKey
         }

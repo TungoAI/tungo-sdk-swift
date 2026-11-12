@@ -27,9 +27,9 @@ public struct RequestOptions: Sendable {
     public var maxRetries: Int?
     /// Extra header fields; they override the default headers of the client.
     public var headers: [String: String]
-    /// The `Idempotency-Key` to send. For operations that declare the header the SDK
-    /// generates a key when this is `nil`; for other operations a key supplied here is
-    /// sent and makes the request safe to retry.
+    /// The `Idempotency-Key` to send to an operation that declares the header; the SDK
+    /// generates one when this is `nil`. Other operations send no key, not even this one
+    /// (the API would ignore it there), and a POST or PATCH among them is never retried.
     public var idempotencyKey: String?
 
     public init(timeout: TimeInterval? = nil, maxRetries: Int? = nil, headers: [String: String] = [:], idempotencyKey: String? = nil) {

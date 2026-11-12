@@ -251,11 +251,18 @@ final class ErrorAndRetryTests: MockTestCase {
         XCTAssertEqual(server.requests.map { $0.bodyText }.count, 3)
     }
 
-    func testPostBecomesRetryableWithACallerKey() async throws {
+    func testACallerKeyDoesNotMakeAnUndeclaredPostRetryable() async throws {
+        // count-tokens declares no Idempotency-Key: the API ignores a key there, so the SDK does
+        // not send it and a lost answer is not followed by a second, billed request.
         server.enqueue(.json(503, "{}"), .json(200, Fixture.tokenCount))
-        _ = try await makeClient(recorder: SleepRecorder()).chat.countTokens(
-            body: ChatTokenCountRequest(message: "x"), options: RequestOptions(idempotencyKey: "k-1"))
-        XCTAssertEqual(server.requests.map { $0.headers["idempotency-key"] }, ["k-1", "k-1"])
+        do {
+            _ = try await makeClient(recorder: SleepRecorder()).chat.countTokens(
+                body: ChatTokenCountRequest(message: "x"),
+                options: RequestOptions(headers: ["Idempotency-Key": "k-2"], idempotencyKey: "k-1"))
+            XCTFail("the 503 must be thrown")
+        } catch is APIError {}
+        XCTAssertEqual(server.requests.count, 1)
+        XCTAssertNil(server.requests[0].headers["idempotency-key"])
     }
 
     func testPutAndDeleteAreRetried() async throws {
