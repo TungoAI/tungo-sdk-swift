@@ -10,8 +10,9 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
     public var messageCount: Double
     /// true — ИИ сейчас отвечает: показать индикатор
     public var running: Bool
-    /// Заголовок — первый вопрос одной строкой (до 64 знаков, длиннее — с «…»); вопрос из одних файлов — их имена
+    /// Название одной строкой (до 64 знаков, длиннее — с «…»): человека, иначе от ИИ, иначе первый вопрос (вопрос из одних файлов — их имена). Откуда оно — title_source
     public var title: String
+    public var titleSource: ChatTitleSource
     /// Последнее изменение (у идущего хода — его начало), ISO 8601 UTC
     public var updatedAt: String
 
@@ -20,12 +21,14 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
         messageCount: Double,
         running: Bool,
         title: String,
+        titleSource: ChatTitleSource,
         updatedAt: String
     ) {
         self.id = id
         self.messageCount = messageCount
         self.running = running
         self.title = title
+        self.titleSource = titleSource
         self.updatedAt = updatedAt
     }
 
@@ -34,6 +37,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
         case messageCount = "message_count"
         case running
         case title
+        case titleSource = "title_source"
         case updatedAt = "updated_at"
     }
 
@@ -43,6 +47,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
         messageCount = try container.decode(Double.self, forKey: .messageCount)
         running = try container.decode(Bool.self, forKey: .running)
         title = try container.decode(String.self, forKey: .title)
+        titleSource = try container.decode(ChatTitleSource.self, forKey: .titleSource)
         updatedAt = try container.decode(String.self, forKey: .updatedAt)
     }
 
@@ -52,6 +57,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
         try container.encode(messageCount, forKey: .messageCount)
         try container.encode(running, forKey: .running)
         try container.encode(title, forKey: .title)
+        try container.encode(titleSource, forKey: .titleSource)
         try container.encode(updatedAt, forKey: .updatedAt)
     }
 }

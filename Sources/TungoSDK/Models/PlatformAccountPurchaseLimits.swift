@@ -10,21 +10,26 @@ public struct PlatformAccountPurchaseLimits: Codable, Hashable, Sendable {
     public var maxTiyn: Int64
     /// Наименьшее пополнение в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var minTiyn: Int64
+    /// Сколько уже пополнено сегодня (сутки по Алматы; платежи без итога тоже в счёте) — тот же счёт, что у предела daily_max_tiyn в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+    public var todayTiyn: Int64
 
     public init(
         dailyMaxTiyn: Int64,
         maxTiyn: Int64,
-        minTiyn: Int64
+        minTiyn: Int64,
+        todayTiyn: Int64
     ) {
         self.dailyMaxTiyn = dailyMaxTiyn
         self.maxTiyn = maxTiyn
         self.minTiyn = minTiyn
+        self.todayTiyn = todayTiyn
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case dailyMaxTiyn = "daily_max_tiyn"
         case maxTiyn = "max_tiyn"
         case minTiyn = "min_tiyn"
+        case todayTiyn = "today_tiyn"
     }
 
     public init(from decoder: Decoder) throws {
@@ -32,6 +37,7 @@ public struct PlatformAccountPurchaseLimits: Codable, Hashable, Sendable {
         dailyMaxTiyn = try container.decode(Int64.self, forKey: .dailyMaxTiyn)
         maxTiyn = try container.decode(Int64.self, forKey: .maxTiyn)
         minTiyn = try container.decode(Int64.self, forKey: .minTiyn)
+        todayTiyn = try container.decode(Int64.self, forKey: .todayTiyn)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -39,5 +45,6 @@ public struct PlatformAccountPurchaseLimits: Codable, Hashable, Sendable {
         try container.encode(dailyMaxTiyn, forKey: .dailyMaxTiyn)
         try container.encode(maxTiyn, forKey: .maxTiyn)
         try container.encode(minTiyn, forKey: .minTiyn)
+        try container.encode(todayTiyn, forKey: .todayTiyn)
     }
 }

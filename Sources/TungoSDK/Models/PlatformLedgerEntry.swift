@@ -12,6 +12,8 @@ public struct PlatformLedgerEntry: Codable, Hashable, Sendable {
     public var at: String
     /// Баланс после движения в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var balanceAfterTiyn: Int64
+    /// Документы пополнения (kind = purchase) из его платежа. null — у остальных видов и у ключа не на все компании. Файл PDF ядро не формирует: чек выпускает касса, ссылка появляется в receipt_url
+    public var documents: PlatformLedgerEntryDocuments?
     /// id движения (led_…); он же — курсор
     public var id: String
     /// Вид: `purchase` — пополнение с карты; `usage` — списание за вызов модели; `refund` — возврат на карту (баланс уменьшается); `adjustment` — корректировка поддержкой или возврат удержанной суммы
@@ -30,6 +32,7 @@ public struct PlatformLedgerEntry: Codable, Hashable, Sendable {
         apiKeyID: String?,
         at: String,
         balanceAfterTiyn: Int64,
+        documents: PlatformLedgerEntryDocuments?,
         id: String,
         kind: PlatformLedgerEntryKind,
         model: String?,
@@ -41,6 +44,7 @@ public struct PlatformLedgerEntry: Codable, Hashable, Sendable {
         self.apiKeyID = apiKeyID
         self.at = at
         self.balanceAfterTiyn = balanceAfterTiyn
+        self.documents = documents
         self.id = id
         self.kind = kind
         self.model = model
@@ -54,6 +58,7 @@ public struct PlatformLedgerEntry: Codable, Hashable, Sendable {
         case apiKeyID = "api_key_id"
         case at
         case balanceAfterTiyn = "balance_after_tiyn"
+        case documents
         case id
         case kind
         case model
@@ -68,6 +73,7 @@ public struct PlatformLedgerEntry: Codable, Hashable, Sendable {
         apiKeyID = try container.decodeIfPresent(String.self, forKey: .apiKeyID)
         at = try container.decode(String.self, forKey: .at)
         balanceAfterTiyn = try container.decode(Int64.self, forKey: .balanceAfterTiyn)
+        documents = try container.decodeIfPresent(PlatformLedgerEntryDocuments.self, forKey: .documents)
         id = try container.decode(String.self, forKey: .id)
         kind = try container.decode(PlatformLedgerEntryKind.self, forKey: .kind)
         model = try container.decodeIfPresent(String.self, forKey: .model)
@@ -82,6 +88,7 @@ public struct PlatformLedgerEntry: Codable, Hashable, Sendable {
         try container.encode(apiKeyID, forKey: .apiKeyID)
         try container.encode(at, forKey: .at)
         try container.encode(balanceAfterTiyn, forKey: .balanceAfterTiyn)
+        try container.encode(documents, forKey: .documents)
         try container.encode(id, forKey: .id)
         try container.encode(kind, forKey: .kind)
         try container.encode(model, forKey: .model)

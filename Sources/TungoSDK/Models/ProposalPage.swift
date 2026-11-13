@@ -4,7 +4,9 @@ import Foundation
 
 /// Страница очереди предложений, свежие сверху
 public struct ProposalPage: Codable, Hashable, Sendable {
-    /// Сколько предложений в каждом статусе (ключ — ProposalStatus), без учёта фильтра — для бейджей вкладок; статусов без предложений нет
+    /// Сколько предложений ждёт решения по просьбе («Отправить на одобрение») — в тех же пределах, что counts
+    public var approvalRequestedCount: Int64
+    /// Сколько предложений в каждом статусе (ключ — ProposalStatus) — для бейджей вкладок; статусов без предложений нет. Считается в пределах source и batch_id (откуда и из какой пачки), остальные фильтры (status, kind, даты, q) на счётчики не влияют
     public var counts: [String: Double]
     /// Предложения страницы, свежие сверху
     public var data: [ProposalListItem]
@@ -14,11 +16,13 @@ public struct ProposalPage: Codable, Hashable, Sendable {
     public var total: Double
 
     public init(
+        approvalRequestedCount: Int64,
         counts: [String: Double],
         data: [ProposalListItem],
         nextCursor: String?,
         total: Double
     ) {
+        self.approvalRequestedCount = approvalRequestedCount
         self.counts = counts
         self.data = data
         self.nextCursor = nextCursor
@@ -26,6 +30,7 @@ public struct ProposalPage: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
+        case approvalRequestedCount = "approval_requested_count"
         case counts
         case data
         case nextCursor = "next_cursor"
@@ -34,6 +39,7 @@ public struct ProposalPage: Codable, Hashable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        approvalRequestedCount = try container.decode(Int64.self, forKey: .approvalRequestedCount)
         counts = try container.decode([String: Double].self, forKey: .counts)
         data = try container.decode([ProposalListItem].self, forKey: .data)
         nextCursor = try container.decodeIfPresent(String.self, forKey: .nextCursor)
@@ -42,6 +48,7 @@ public struct ProposalPage: Codable, Hashable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(approvalRequestedCount, forKey: .approvalRequestedCount)
         try container.encode(counts, forKey: .counts)
         try container.encode(data, forKey: .data)
         try container.encode(nextCursor, forKey: .nextCursor)

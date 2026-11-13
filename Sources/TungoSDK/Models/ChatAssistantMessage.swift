@@ -10,8 +10,12 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
     public var blocks: [ChatHistoryBlock]
     /// Источники ответа
     public var citations: [ChatCitation]
+    /// Вопросы-продолжения под ответом, до 3, на языке разговора: нажатие — обычный новый вопрос с этим текстом. Пусто — предложить нечего
+    public var followups: [String]
     /// Устойчивый id сообщения: <dialog_id>:<номер хода>:a
     public var id: String
+    /// Предложенное следующее действие; null — нет
+    public var nextAction: ChatNextAction?
     /// Номера предложений этого хода — то же, что proposal-блоки, списком
     public var proposalIDs: [String]
     /// Ответ ИИ
@@ -25,7 +29,9 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         at: String,
         blocks: [ChatHistoryBlock],
         citations: [ChatCitation],
+        followups: [String],
         id: String,
+        nextAction: ChatNextAction?,
         proposalIDs: [String],
         state: ChatAssistantMessageState,
         thinking: String,
@@ -34,7 +40,9 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         self.at = at
         self.blocks = blocks
         self.citations = citations
+        self.followups = followups
         self.id = id
+        self.nextAction = nextAction
         self.proposalIDs = proposalIDs
         self.role = role
         self.state = state
@@ -45,7 +53,9 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         case at
         case blocks
         case citations
+        case followups
         case id
+        case nextAction = "next_action"
         case proposalIDs = "proposal_ids"
         case role
         case state
@@ -57,7 +67,9 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         at = try container.decode(String.self, forKey: .at)
         blocks = try container.decode([ChatHistoryBlock].self, forKey: .blocks)
         citations = try container.decode([ChatCitation].self, forKey: .citations)
+        followups = try container.decode([String].self, forKey: .followups)
         id = try container.decode(String.self, forKey: .id)
+        nextAction = try container.decodeIfPresent(ChatNextAction.self, forKey: .nextAction)
         proposalIDs = try container.decode([String].self, forKey: .proposalIDs)
         role = try container.decode(String.self, forKey: .role)
         state = try container.decode(ChatAssistantMessageState.self, forKey: .state)
@@ -69,7 +81,9 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         try container.encode(at, forKey: .at)
         try container.encode(blocks, forKey: .blocks)
         try container.encode(citations, forKey: .citations)
+        try container.encode(followups, forKey: .followups)
         try container.encode(id, forKey: .id)
+        try container.encode(nextAction, forKey: .nextAction)
         try container.encode(proposalIDs, forKey: .proposalIDs)
         try container.encode(role, forKey: .role)
         try container.encode(state, forKey: .state)

@@ -4,30 +4,40 @@ import Foundation
 
 /// Ответ на один вопрос из события choice
 public struct ChatChoiceAnswer: Codable, Hashable, Sendable {
-    /// Свой ответ текстом (вариант «свой ответ»). Нужен selected или other — хотя бы одно
+    /// Свой ответ текстом (вариант «свой ответ»). Нужен selected или other — хотя бы одно (или skipped)
     public var other: String?
     /// Выбранные варианты — их label из options, в любом порядке; без повторов. В вопросе без multi_select — не больше одного
     public var selected: [String]?
+    /// true — «Пропустить»: вопрос оставлен без ответа, selected и other не передавать. ИИ узнаёт, что вопрос пропущен, и продолжает без этого ответа. У вопроса-подтверждения действия пропуск равен отказу: действие не выполняется
+    public var skipped: Bool?
 
-    public init(other: String? = nil, selected: [String]? = nil) {
+    public init(
+        other: String? = nil,
+        selected: [String]? = nil,
+        skipped: Bool? = nil
+    ) {
         self.other = other
         self.selected = selected
+        self.skipped = skipped
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case other
         case selected
+        case skipped
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         other = try container.decodeIfPresent(String.self, forKey: .other)
         selected = try container.decodeIfPresent([String].self, forKey: .selected)
+        skipped = try container.decodeIfPresent(Bool.self, forKey: .skipped)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(other, forKey: .other)
         try container.encodeIfPresent(selected, forKey: .selected)
+        try container.encodeIfPresent(skipped, forKey: .skipped)
     }
 }

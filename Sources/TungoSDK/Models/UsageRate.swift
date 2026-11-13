@@ -6,59 +6,73 @@ import Foundation
 public struct UsageRate: Codable, Hashable, Sendable {
     /// Цена 1 млн токенов чтения из кэша модели в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var cacheReadPerMtokTiyn: Int64
-    /// Цена 1 млн токенов записи в кэш модели в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+    /// Цена 1 млн токенов записи в кэш модели на 1 час (дороже: так кэшируются правила и инструменты) в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+    public var cacheWrite1hPerMtokTiyn: Int64
+    /// Цена 1 млн токенов записи в кэш модели на 5 минут в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var cacheWritePerMtokTiyn: Int64
     /// С какого момента действует цена, ISO 8601 UTC
     public var effectiveFrom: String
     /// Цена 1 млн входных токенов (вопрос и контекст; токен — кусочек текста) в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var inputPerMtokTiyn: Int64
-    /// Модель ИИ (техническое имя)
+    /// Модель ИИ: tungo-1-flash, tungo-1, tungo-1-deep (tungo-search — поиск по нормам, tungo-legacy — прежняя)
     public var model: String
     /// Цена 1 млн токенов ответа в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var outputPerMtokTiyn: Int64
+    /// Название модели для людей
+    public var title: String
 
     public init(
         cacheReadPerMtokTiyn: Int64,
+        cacheWrite1hPerMtokTiyn: Int64,
         cacheWritePerMtokTiyn: Int64,
         effectiveFrom: String,
         inputPerMtokTiyn: Int64,
         model: String,
-        outputPerMtokTiyn: Int64
+        outputPerMtokTiyn: Int64,
+        title: String
     ) {
         self.cacheReadPerMtokTiyn = cacheReadPerMtokTiyn
+        self.cacheWrite1hPerMtokTiyn = cacheWrite1hPerMtokTiyn
         self.cacheWritePerMtokTiyn = cacheWritePerMtokTiyn
         self.effectiveFrom = effectiveFrom
         self.inputPerMtokTiyn = inputPerMtokTiyn
         self.model = model
         self.outputPerMtokTiyn = outputPerMtokTiyn
+        self.title = title
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case cacheReadPerMtokTiyn = "cache_read_per_mtok_tiyn"
+        case cacheWrite1hPerMtokTiyn = "cache_write_1h_per_mtok_tiyn"
         case cacheWritePerMtokTiyn = "cache_write_per_mtok_tiyn"
         case effectiveFrom = "effective_from"
         case inputPerMtokTiyn = "input_per_mtok_tiyn"
         case model
         case outputPerMtokTiyn = "output_per_mtok_tiyn"
+        case title
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         cacheReadPerMtokTiyn = try container.decode(Int64.self, forKey: .cacheReadPerMtokTiyn)
+        cacheWrite1hPerMtokTiyn = try container.decode(Int64.self, forKey: .cacheWrite1hPerMtokTiyn)
         cacheWritePerMtokTiyn = try container.decode(Int64.self, forKey: .cacheWritePerMtokTiyn)
         effectiveFrom = try container.decode(String.self, forKey: .effectiveFrom)
         inputPerMtokTiyn = try container.decode(Int64.self, forKey: .inputPerMtokTiyn)
         model = try container.decode(String.self, forKey: .model)
         outputPerMtokTiyn = try container.decode(Int64.self, forKey: .outputPerMtokTiyn)
+        title = try container.decode(String.self, forKey: .title)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(cacheReadPerMtokTiyn, forKey: .cacheReadPerMtokTiyn)
+        try container.encode(cacheWrite1hPerMtokTiyn, forKey: .cacheWrite1hPerMtokTiyn)
         try container.encode(cacheWritePerMtokTiyn, forKey: .cacheWritePerMtokTiyn)
         try container.encode(effectiveFrom, forKey: .effectiveFrom)
         try container.encode(inputPerMtokTiyn, forKey: .inputPerMtokTiyn)
         try container.encode(model, forKey: .model)
         try container.encode(outputPerMtokTiyn, forKey: .outputPerMtokTiyn)
+        try container.encode(title, forKey: .title)
     }
 }

@@ -11,7 +11,7 @@ public struct CompanyListItem: Codable, Hashable, Sendable {
     public var createdAt: String
     /// Компания — её id во всех адресах /v1/companies/{co}/… (co_…)
     public var id: String
-    public var legalForm: CompanyLegalForm
+    public var legalForm: CompanyLegalForm?
     /// Название компании, как его ввели при заведении
     public var name: String
     /// Ваши права в этой компании — по ним кабинет прячет или гасит кнопки (нет proposals.approve — нет «Одобрить»). По ключу API — права, суженные до прав ключа. Порядок — как в каталоге прав
@@ -29,7 +29,7 @@ public struct CompanyListItem: Codable, Hashable, Sendable {
         counts: CompanyCounts,
         createdAt: String,
         id: String,
-        legalForm: CompanyLegalForm,
+        legalForm: CompanyLegalForm?,
         name: String,
         permissions: [CompanyPermission],
         role: String,
@@ -70,7 +70,7 @@ public struct CompanyListItem: Codable, Hashable, Sendable {
         counts = try container.decode(CompanyCounts.self, forKey: .counts)
         createdAt = try container.decode(String.self, forKey: .createdAt)
         id = try container.decode(String.self, forKey: .id)
-        legalForm = try container.decode(CompanyLegalForm.self, forKey: .legalForm)
+        legalForm = try container.decodeIfPresent(CompanyLegalForm.self, forKey: .legalForm)
         name = try container.decode(String.self, forKey: .name)
         permissions = try container.decode([CompanyPermission].self, forKey: .permissions)
         role = try container.decode(String.self, forKey: .role)

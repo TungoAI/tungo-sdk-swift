@@ -4,7 +4,7 @@ import Foundation
 
 /// Запись журнала организации: кто, когда и что сделал.
 public struct AuditEntry: Codable, Hashable, Sendable {
-    /// Что сделано — машинное имя вида «объект.действие»; подпись по-русски — в action_title. Значения:
+    /// Код действия вида «объект.действие». Текст для человека собирайте сами на его языке: по этому коду и параметрам из data (ниже — что значит каждый код). Значения:
     /// - `company.created` — Компания заведена
     /// - `company.updated` — Карточка компании изменена
     /// - `company.archived` — Компания убрана в архив
@@ -21,12 +21,14 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `company.onec_connector_code_created` — Выдан код привязки программы в офисе
     /// - `company.onec_connector_paired` — Программа в офисе привязана
     /// - `company.onec_connector_rotated` — Ключ программы в офисе заменён
+    /// - `company.onec_connector_rotate_refused` — Отказ в повторе смены ключа программы в офисе: прежний ключ без метки той смены
     /// - `company.onec_connector_revoked` — Программа в офисе отвязана
     /// - `company.onec_connector_link_approved` — Привязка программы в офисе одобрена в кабинете
     /// - `connector.link_created` — Программа в офисе запросила привязку через браузер
     /// - `connector.link_denied` — Привязка программы в офисе отклонена
     /// - `company.onec_link_approved` — Вход в Tungo из 1С подтверждён
     /// - `company.onec_link_revoked` — Вход в Tungo из 1С отозван
+    /// - `onec_link.wrong_match` — Вход в Tungo из 1С отменён: на сайте нажато не то число сверки
     /// - `company.profile_rebuild` — Справка о компании пересобрана
     /// - `workspace.member_joined` — Сотрудник вступил в организацию
     /// - `workspace.member_role_changed` — Роль сотрудника в организации изменена
@@ -48,6 +50,8 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `workspace.ownership_transferred` — Владение организацией передано
     /// - `workspace.deleted` — Организация удалена
     /// - `workspace.created` — Создана команда
+    /// - `team.checkout_abandoned` — Оформление Team не завершено: черновик команды убран
+    /// - `enterprise.request_created` — Отправлена заявка на Enterprise
     /// - `workspace.converted_to_team` — Личная организация стала командой
     /// - `workspace.deletion_scheduled` — Владелец запланировал удаление организации
     /// - `workspace.deletion_cancelled` — Удаление организации отменено
@@ -93,6 +97,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `billing.profile.updated` — Реквизиты для счетов изменены
     /// - `billing.payment_method.disabled` — Карта отключена
     /// - `billing.refund.succeeded` — Деньги возвращены
+    /// - `billing.manual_charge` — Админ платформы списал деньги с карты вручную
     /// - `subscription.created` — Подписка оформлена
     /// - `subscription.changed` — Тариф изменён
     /// - `subscription.cancel_scheduled` — Подписка отменена с конца периода
@@ -118,13 +123,49 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `account.deletion_scheduled` — Аккаунт помечен к удалению
     /// - `account.deletion_cancelled` — Удаление аккаунта отменено
     /// - `account.deleted` — Аккаунт удалён и обезличен
+    /// - `account.email_code_sent` — Запрошен код подтверждения почты (аккаунт Telegram)
+    /// - `account.email_bound` — Почта привязана к аккаунту Telegram
+    /// - `account.telegram_merged` — Telegram привязан к аккаунту с подтверждённой почтой, аккаунт Telegram закрыт
+    /// - `account.google_linked` — Вход через Google привязал Google к аккаунту с той же почтой (sessions_closed — почта не была подтверждена: прежние сессии закрыты)
+    /// - `account.telegram_merge_refused` — Склейка аккаунта Telegram с аккаунтом почты отклонена (данные, другой Telegram или почта закрыта)
+    /// - `admin.ads.conversions_released` — Удержанные рекламные конверсии отправлены вручную
+    /// - `admin.ads.conversions_rejected` — Рекламные конверсии отклонены
+    /// - `admin.ads.signups_exported` — Выгрузка рекламных регистраций с IP и User-Agent (CSV)
+    /// - `admin.access.signed_in` — Вход в админку по пропуску Cloudflare Access
+    /// - `admin.access.refused` — Вход в админку по пропуску Cloudflare Access отклонён
+    /// - `admin.two_factor.verified` — Администратор платформы подтвердил вход вторым фактором
+    /// - `admin.two_factor.enable_requested` — Сотрудник платформы начал включать второй фактор (с кодом из почты)
+    /// - `admin.two_factor.enabled` — Сотрудник платформы включил второй фактор
+    /// - `admin.two_factor.disabled` — Сотрудник платформы отключил второй фактор (с кодом из почты)
+    /// - `admin.session.signed_in` — Вход в админку по сессии со вторым фактором
+    /// - `admin.user.banned` — Вход пользователю закрыт платформой
+    /// - `admin.user.unbanned` — Вход пользователю открыт платформой
     /// - `admin.workspace.blocked` — Организация заблокирована платформой
     /// - `admin.workspace.unblocked` — Организация разблокирована платформой
     /// - `admin.workspace.training_consent` — Согласие на обучение изменено (платформа)
     /// - `admin.user.platform_roles_changed` — Роли платформы изменены
     /// - `admin.user.free_eligibility_changed` — Бесплатный лимит пользователя выдан или снят вручную (платформа)
+    /// - `admin.user.limit_resets_granted` — Человеку выданы сбросы лимита (платформа)
+    /// - `admin.user.limit_resets_revoked` — Выданные сбросы лимита отозваны (платформа)
+    /// - `usage.limit_reset_applied` — Применён сброс лимита
+    /// - `referral.claimed` — Регистрация по приглашению друга
+    /// - `referral.rewarded` — За приглашённого друга выдан сброс лимита
+    /// - `admin.enterprise_request.status_changed` — Статус заявки Enterprise изменён (платформа)
     /// - `admin.training.exported` — Выгрузка для обучения (платформа)
+    /// - `admin.setting.changed` — Настройка платформы изменена
+    /// - `admin.logs.purged` — Журнал запросов и итогов ходов ИИ убран вручную (платформа)
     /// - `admin.dialog.pd_viewed` — Поддержка открыла разговор с персональными данными
+    /// - `admin.dialog.label_set` — Оценка ответа для обучения поставлена или заменена (платформа)
+    /// - `admin.dialog.label_removed` — Оценка ответа для обучения удалена (платформа)
+    /// - `admin.journal.pd_viewed` — Поддержка открыла журнал ИИ-бухгалтера с персональными данными
+    /// - `admin.company.pd_viewed` — Поддержка открыла карточку компании-ИП с ИИН
+    /// - `admin.company.pd_searched` — Поддержка нашла компанию-ИП поиском по ИИН
+    /// - `admin.payment.pd_viewed` — Поддержка открыла платёж с реквизитами плательщика и обменом с банком
+    /// - `site.post_published` — Статья блога опубликована на сайте (платформа)
+    /// - `site.post_unpublished` — Статья блога снята с сайта (платформа)
+    /// - `site.post_deleted` — Черновик статьи блога удалён (платформа)
+    /// - `site.legal_published` — Опубликована новая редакция документа сайта (платформа)
+    /// - `site.trackers_saved` — Изменены счётчики и коды подтверждения сайта (платформа)
     /// - `canary.triggered` — Сработала приманка: украденный ключ или почта «сотрудника» (платформа)
     /// - `billing.payment.new` — Платёж: создан
     /// - `billing.payment.pending` — Платёж: отправлен в банк
@@ -137,7 +178,9 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `billing.payment.partially_refunded` — Платёж: возвращён частично
     /// - `billing.payment.refunded` — Платёж: возвращён
     public var action: AuditEntryAction
-    /// Что сделано, по-русски — для показа
+    /// Что сделано, готовой фразой по-русски. Оставлено для совместимости: фраза всегда русская, поэтому для показа берите код action и параметры data и подставляйте текст на языке человека
+    ///
+    /// Deprecated by the API.
     public var actionTitle: String
     /// Кто сделал
     public var actor: AuditEntryActor
@@ -145,12 +188,14 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     public var at: String?
     /// Компания, к которой относится запись (co_…); null — запись об организации в целом
     public var companyID: String?
-    /// Подробности действия (JSON, ключи snake_case): например { before, after } у изменений. Вид зависит от action — показывать как дополнительные сведения
+    /// Параметры действия (JSON, ключи snake_case) — для подстановки в текст и для подробностей: например { role } у смены роли, { from, amount_tiyn, kind } у платежа, { before, after } у изменений. Набор зависит от action
     public var data: JSONValue?
     /// id записи (aud_…)
     public var id: String
     /// IP, с которого пришёл запрос; null — фоновое действие
     public var ip: String?
+    /// Над чем сделано — с названием, чтобы не показывать безликое «Организация»: в отличие от target, у действий с вебхуком это сам адрес вебхука, у платежа есть сумма и назначение. null — без отдельного объекта. По ключу API названия, суммы и назначения нет (null): они только по сессии
+    public var object: AuditEntryObject?
     /// Номер запроса (req_…) — по нему поддержка найдёт запрос; null — фоновое действие
     public var requestID: String?
     /// Над чем сделано; null — без отдельного объекта
@@ -164,6 +209,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
         companyID: String?,
         id: String,
         ip: String?,
+        object: AuditEntryObject?,
         requestID: String?,
         target: AuditEntryTarget?,
         data: JSONValue? = nil
@@ -176,6 +222,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
         self.data = data
         self.id = id
         self.ip = ip
+        self.object = object
         self.requestID = requestID
         self.target = target
     }
@@ -189,6 +236,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
         case data
         case id
         case ip
+        case object
         case requestID = "request_id"
         case target
     }
@@ -203,6 +251,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
         data = try container.decodeIfPresent(JSONValue.self, forKey: .data)
         id = try container.decode(String.self, forKey: .id)
         ip = try container.decodeIfPresent(String.self, forKey: .ip)
+        object = try container.decodeIfPresent(AuditEntryObject.self, forKey: .object)
         requestID = try container.decodeIfPresent(String.self, forKey: .requestID)
         target = try container.decodeIfPresent(AuditEntryTarget.self, forKey: .target)
     }
@@ -217,6 +266,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
         try container.encodeIfPresent(data, forKey: .data)
         try container.encode(id, forKey: .id)
         try container.encode(ip, forKey: .ip)
+        try container.encode(object, forKey: .object)
         try container.encode(requestID, forKey: .requestID)
         try container.encode(target, forKey: .target)
     }

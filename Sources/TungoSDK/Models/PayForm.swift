@@ -12,17 +12,21 @@ public struct PayForm: Codable, Hashable, Sendable {
     public var paymentObject: [String: JSONValue]
     /// Адрес скрипта платёжной формы ePay: подключить его на странице (тег script) перед открытием формы
     public var scriptURL: String
+    /// true — тестовый терминал ePay: настоящие деньги не списываются, платят тестовыми картами. Показать на форме пометку «тестовая оплата»
+    public var testMode: Bool
 
     public init(
         amountTiyn: Int64,
         paymentID: String,
         paymentObject: [String: JSONValue],
-        scriptURL: String
+        scriptURL: String,
+        testMode: Bool
     ) {
         self.amountTiyn = amountTiyn
         self.paymentID = paymentID
         self.paymentObject = paymentObject
         self.scriptURL = scriptURL
+        self.testMode = testMode
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
@@ -30,6 +34,7 @@ public struct PayForm: Codable, Hashable, Sendable {
         case paymentID = "payment_id"
         case paymentObject = "payment_object"
         case scriptURL = "script_url"
+        case testMode = "test_mode"
     }
 
     public init(from decoder: Decoder) throws {
@@ -38,6 +43,7 @@ public struct PayForm: Codable, Hashable, Sendable {
         paymentID = try container.decode(String.self, forKey: .paymentID)
         paymentObject = try container.decode([String: JSONValue].self, forKey: .paymentObject)
         scriptURL = try container.decode(String.self, forKey: .scriptURL)
+        testMode = try container.decode(Bool.self, forKey: .testMode)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -46,5 +52,6 @@ public struct PayForm: Codable, Hashable, Sendable {
         try container.encode(paymentID, forKey: .paymentID)
         try container.encode(paymentObject, forKey: .paymentObject)
         try container.encode(scriptURL, forKey: .scriptURL)
+        try container.encode(testMode, forKey: .testMode)
     }
 }

@@ -22,6 +22,8 @@ public struct BatchSummary: Codable, Hashable, Sendable {
     public var reason: String?
     /// true — задание ещё идёт: кнопка «Одобрить» выключена
     public var running: Bool
+    /// Данные файла выписки (счёт, банк, период, остатки); null — задание не по файлу выписки (ЭСФ, DirectBank, одобрение) или заведено до появления поля
+    public var statement: BatchStatement?
     /// Название задания
     public var title: String
     public var totals: BatchSummaryTotals
@@ -34,6 +36,7 @@ public struct BatchSummary: Codable, Hashable, Sendable {
         manualRows: [BatchManualRow],
         proposals: [BatchSummaryProposal],
         running: Bool,
+        statement: BatchStatement?,
         title: String,
         totals: BatchSummaryTotals,
         finishedAt: String? = nil,
@@ -48,6 +51,7 @@ public struct BatchSummary: Codable, Hashable, Sendable {
         self.proposals = proposals
         self.reason = reason
         self.running = running
+        self.statement = statement
         self.title = title
         self.totals = totals
     }
@@ -62,6 +66,7 @@ public struct BatchSummary: Codable, Hashable, Sendable {
         case proposals
         case reason
         case running
+        case statement
         case title
         case totals
     }
@@ -77,6 +82,7 @@ public struct BatchSummary: Codable, Hashable, Sendable {
         proposals = try container.decode([BatchSummaryProposal].self, forKey: .proposals)
         reason = try container.decodeIfPresent(String.self, forKey: .reason)
         running = try container.decode(Bool.self, forKey: .running)
+        statement = try container.decodeIfPresent(BatchStatement.self, forKey: .statement)
         title = try container.decode(String.self, forKey: .title)
         totals = try container.decode(BatchSummaryTotals.self, forKey: .totals)
     }
@@ -92,6 +98,7 @@ public struct BatchSummary: Codable, Hashable, Sendable {
         try container.encode(proposals, forKey: .proposals)
         try container.encodeIfPresent(reason, forKey: .reason)
         try container.encode(running, forKey: .running)
+        try container.encode(statement, forKey: .statement)
         try container.encode(title, forKey: .title)
         try container.encode(totals, forKey: .totals)
     }

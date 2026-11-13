@@ -5,12 +5,13 @@ import Foundation
 /// Короткая карточка для очереди — без строк и проводок (за ними — GET …/proposals/{id})
 public struct ProposalListItem: Codable, Hashable, Sendable {
     public var approval: ProposalApproval
+    public var approvalRequest: ProposalApprovalRequest
     /// Сколько блокеров: больше 0 — одобрить нельзя, нужен ответ человека в чате
     public var blockerCount: Int64
     public var counterparty: ProposalParty?
     /// Когда ИИ подготовил предложение, ISO 8601 UTC
     public var createdAt: String
-    /// Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из чата (пачка, автоматизация, MCP)
+    /// Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из разговора человека (пачка из ручки, автоматизация, MCP)
     public var dialogID: String?
     /// Номер документа в 1С — есть, когда документ уже записан
     public var documentNumber: String?
@@ -26,7 +27,10 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
     public var levelTitle: String
     /// Сколько строк товаров и услуг в документе; 0 у платёжек и справочников
     public var lineCount: Int64
+    public var origin: ProposalOrigin
     public var status: ProposalStatus
+    /// Причина отказа — у статусов rejected (отклонено) и failed (записать не удалось): последняя такая запись history. null — статус другой или причину не записали
+    public var statusReason: ProposalListItemStatusReason?
     /// Статус по-русски для показа (бейдж)
     public var statusTitle: String
     /// Заголовок строки очереди: вид документа, дата и контрагент
@@ -38,6 +42,7 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
 
     public init(
         approval: ProposalApproval,
+        approvalRequest: ProposalApprovalRequest,
         blockerCount: Int64,
         createdAt: String,
         dialogID: String?,
@@ -48,7 +53,9 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
         level: AutonomyLevel,
         levelTitle: String,
         lineCount: Int64,
+        origin: ProposalOrigin,
         status: ProposalStatus,
+        statusReason: ProposalListItemStatusReason?,
         statusTitle: String,
         title: String,
         total: Money,
@@ -58,6 +65,7 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
         documentNumber: String? = nil
     ) {
         self.approval = approval
+        self.approvalRequest = approvalRequest
         self.blockerCount = blockerCount
         self.counterparty = counterparty
         self.createdAt = createdAt
@@ -70,7 +78,9 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
         self.level = level
         self.levelTitle = levelTitle
         self.lineCount = lineCount
+        self.origin = origin
         self.status = status
+        self.statusReason = statusReason
         self.statusTitle = statusTitle
         self.title = title
         self.total = total
@@ -80,6 +90,7 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case approval
+        case approvalRequest = "approval_request"
         case blockerCount = "blocker_count"
         case counterparty
         case createdAt = "created_at"
@@ -92,7 +103,9 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
         case level
         case levelTitle = "level_title"
         case lineCount = "line_count"
+        case origin
         case status
+        case statusReason = "status_reason"
         case statusTitle = "status_title"
         case title
         case total
@@ -103,6 +116,7 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         approval = try container.decode(ProposalApproval.self, forKey: .approval)
+        approvalRequest = try container.decode(ProposalApprovalRequest.self, forKey: .approvalRequest)
         blockerCount = try container.decode(Int64.self, forKey: .blockerCount)
         counterparty = try container.decodeIfPresent(ProposalParty.self, forKey: .counterparty)
         createdAt = try container.decode(String.self, forKey: .createdAt)
@@ -115,7 +129,9 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
         level = try container.decode(AutonomyLevel.self, forKey: .level)
         levelTitle = try container.decode(String.self, forKey: .levelTitle)
         lineCount = try container.decode(Int64.self, forKey: .lineCount)
+        origin = try container.decode(ProposalOrigin.self, forKey: .origin)
         status = try container.decode(ProposalStatus.self, forKey: .status)
+        statusReason = try container.decodeIfPresent(ProposalListItemStatusReason.self, forKey: .statusReason)
         statusTitle = try container.decode(String.self, forKey: .statusTitle)
         title = try container.decode(String.self, forKey: .title)
         total = try container.decode(Money.self, forKey: .total)
@@ -126,6 +142,7 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(approval, forKey: .approval)
+        try container.encode(approvalRequest, forKey: .approvalRequest)
         try container.encode(blockerCount, forKey: .blockerCount)
         try container.encodeIfPresent(counterparty, forKey: .counterparty)
         try container.encode(createdAt, forKey: .createdAt)
@@ -138,7 +155,9 @@ public struct ProposalListItem: Codable, Hashable, Sendable {
         try container.encode(level, forKey: .level)
         try container.encode(levelTitle, forKey: .levelTitle)
         try container.encode(lineCount, forKey: .lineCount)
+        try container.encode(origin, forKey: .origin)
         try container.encode(status, forKey: .status)
+        try container.encode(statusReason, forKey: .statusReason)
         try container.encode(statusTitle, forKey: .statusTitle)
         try container.encode(title, forKey: .title)
         try container.encode(total, forKey: .total)

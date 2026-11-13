@@ -8,26 +8,35 @@ public struct ChatDialogRenamed: Codable, Hashable, Sendable {
     public var id: String
     /// Название разговора теперь
     public var title: String
+    public var titleSource: ChatTitleSource
 
-    public init(id: String, title: String) {
+    public init(
+        id: String,
+        title: String,
+        titleSource: ChatTitleSource
+    ) {
         self.id = id
         self.title = title
+        self.titleSource = titleSource
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case title
+        case titleSource = "title_source"
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
+        titleSource = try container.decode(ChatTitleSource.self, forKey: .titleSource)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
+        try container.encode(titleSource, forKey: .titleSource)
     }
 }

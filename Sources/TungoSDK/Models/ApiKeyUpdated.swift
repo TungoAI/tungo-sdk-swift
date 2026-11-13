@@ -8,7 +8,7 @@ public struct ApiKeyUpdated: Codable, Hashable, Sendable {
     public var allCompanies: Bool
     /// С каких IP и подсетей CIDR ключ работает; с другого адреса — 403 ip_not_allowed. null — с любых
     public var allowedIps: [String]?
-    /// Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies)
+    /// Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies) и у ключа без компаний (no_companies)
     public var companyIDs: [String]
     /// Когда выпущен, ISO 8601 UTC
     public var createdAt: String
@@ -28,6 +28,8 @@ public struct ApiKeyUpdated: Codable, Hashable, Sendable {
     public var monthlyCapTiyn: Int64?
     /// Название ключа для людей
     public var name: String
+    /// Ключ без доступа к компаниям и их 1С: company_ids пуст, all_companies = false; компаний не видит никогда. Пустой company_ids сам по себе вида не называет — смотреть на all_companies и no_companies
+    public var noCompanies: Bool
     /// Права ключа: `company.read` — читать данные компаний (есть всегда); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобрять запись в 1С; `automations.read` — видеть автоматизации; `automations.manage` — менять и запускать автоматизации; `webhooks.manage` — вебхуки всей организации
     public var permissions: [ApiKeyUpdatedPermissionItem]
     /// Открытая часть ключа для показа — узнать ключ среди других; сам ключ (tg_…_секрет) целиком не хранится
@@ -62,6 +64,7 @@ public struct ApiKeyUpdated: Codable, Hashable, Sendable {
         lastUsedIp: String?,
         monthlyCapTiyn: Int64?,
         name: String,
+        noCompanies: Bool,
         permissions: [ApiKeyUpdatedPermissionItem],
         prefix: String,
         previousSecretValidUntil: String?,
@@ -85,6 +88,7 @@ public struct ApiKeyUpdated: Codable, Hashable, Sendable {
         self.lastUsedIp = lastUsedIp
         self.monthlyCapTiyn = monthlyCapTiyn
         self.name = name
+        self.noCompanies = noCompanies
         self.permissions = permissions
         self.prefix = prefix
         self.previousSecretValidUntil = previousSecretValidUntil
@@ -110,6 +114,7 @@ public struct ApiKeyUpdated: Codable, Hashable, Sendable {
         case lastUsedIp = "last_used_ip"
         case monthlyCapTiyn = "monthly_cap_tiyn"
         case name
+        case noCompanies = "no_companies"
         case permissions
         case prefix
         case previousSecretValidUntil = "previous_secret_valid_until"
@@ -136,6 +141,7 @@ public struct ApiKeyUpdated: Codable, Hashable, Sendable {
         lastUsedIp = try container.decodeIfPresent(String.self, forKey: .lastUsedIp)
         monthlyCapTiyn = try container.decodeIfPresent(Int64.self, forKey: .monthlyCapTiyn)
         name = try container.decode(String.self, forKey: .name)
+        noCompanies = try container.decode(Bool.self, forKey: .noCompanies)
         permissions = try container.decode([ApiKeyUpdatedPermissionItem].self, forKey: .permissions)
         prefix = try container.decode(String.self, forKey: .prefix)
         previousSecretValidUntil = try container.decodeIfPresent(String.self, forKey: .previousSecretValidUntil)
@@ -162,6 +168,7 @@ public struct ApiKeyUpdated: Codable, Hashable, Sendable {
         try container.encode(lastUsedIp, forKey: .lastUsedIp)
         try container.encode(monthlyCapTiyn, forKey: .monthlyCapTiyn)
         try container.encode(name, forKey: .name)
+        try container.encode(noCompanies, forKey: .noCompanies)
         try container.encode(permissions, forKey: .permissions)
         try container.encode(prefix, forKey: .prefix)
         try container.encode(previousSecretValidUntil, forKey: .previousSecretValidUntil)

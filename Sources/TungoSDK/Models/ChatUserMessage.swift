@@ -10,6 +10,8 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
     public var attachments: [ChatAttachmentMeta]?
     /// Устойчивый id сообщения: <dialog_id>:<номер хода>:u
     public var id: String
+    /// Упоминания через «@» в этом вопросе, если были: вид, id и название на момент отправки
+    public var mentions: [ChatHistoryMention]?
     /// Вопрос идущего хода: ответа ещё нет, его дочитывают потоком (GET …/chat/{id}/events?turn=). Только у последнего сообщения
     public var pending: Bool?
     /// Сообщение человека
@@ -22,12 +24,14 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         id: String,
         text: String,
         attachments: [ChatAttachmentMeta]? = nil,
+        mentions: [ChatHistoryMention]? = nil,
         pending: Bool? = nil,
         role: String = "user"
     ) {
         self.at = at
         self.attachments = attachments
         self.id = id
+        self.mentions = mentions
         self.pending = pending
         self.role = role
         self.text = text
@@ -37,6 +41,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         case at
         case attachments
         case id
+        case mentions
         case pending
         case role
         case text
@@ -47,6 +52,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         at = try container.decode(String.self, forKey: .at)
         attachments = try container.decodeIfPresent([ChatAttachmentMeta].self, forKey: .attachments)
         id = try container.decode(String.self, forKey: .id)
+        mentions = try container.decodeIfPresent([ChatHistoryMention].self, forKey: .mentions)
         pending = try container.decodeIfPresent(Bool.self, forKey: .pending)
         role = try container.decode(String.self, forKey: .role)
         text = try container.decode(String.self, forKey: .text)
@@ -57,6 +63,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         try container.encode(at, forKey: .at)
         try container.encodeIfPresent(attachments, forKey: .attachments)
         try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(mentions, forKey: .mentions)
         try container.encodeIfPresent(pending, forKey: .pending)
         try container.encode(role, forKey: .role)
         try container.encode(text, forKey: .text)

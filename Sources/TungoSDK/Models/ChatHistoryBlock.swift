@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Блок ответа в истории — те же виды, что клиент собирает из живого потока: text | tool | proposal | question | error
+/// Блок ответа в истории — те же виды, что клиент собирает из живого потока: text | tool | proposal | batch | question | error
 ///
 /// A union discriminated by `kind`. A variant this version of the SDK does not know, or a known
 /// variant whose payload does not match this version, is kept as ``unknown(_:)`` with its raw JSON.
@@ -13,6 +13,8 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
     case tool(ChatHistoryTool)
     /// `kind: "proposal"`
     case proposal(ChatHistoryProposal)
+    /// `kind: "batch"`
+    case batch(ChatHistoryBatch)
     /// `kind: "question"`
     case question(ChatHistoryQuestion)
     /// `kind: "error"`
@@ -37,6 +39,11 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
                 self = .proposal(value)
                 return
             }
+        case "batch":
+            if let value = try? ChatHistoryBatch(from: decoder) {
+                self = .batch(value)
+                return
+            }
         case "question":
             if let value = try? ChatHistoryQuestion(from: decoder) {
                 self = .question(value)
@@ -58,6 +65,7 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
         case .text(let value): try value.encode(to: encoder)
         case .tool(let value): try value.encode(to: encoder)
         case .proposal(let value): try value.encode(to: encoder)
+        case .batch(let value): try value.encode(to: encoder)
         case .question(let value): try value.encode(to: encoder)
         case .error(let value): try value.encode(to: encoder)
         case .unknown(let value): try value.encode(to: encoder)
@@ -70,6 +78,7 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
         case .text: return "text"
         case .tool: return "tool"
         case .proposal: return "proposal"
+        case .batch: return "batch"
         case .question: return "question"
         case .error: return "error"
         case .unknown(let value): return value["kind"]?.stringValue

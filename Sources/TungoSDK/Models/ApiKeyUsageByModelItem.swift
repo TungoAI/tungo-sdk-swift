@@ -6,7 +6,7 @@ import Foundation
 public struct ApiKeyUsageByModelItem: Codable, Hashable, Sendable {
     /// Стоимость в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var costTiyn: Int64
-    /// Модель ИИ (техническое имя)
+    /// Модель ИИ: tungo-1-flash, tungo-1, tungo-1-deep (tungo-search, tungo-legacy)
     public var model: String
     /// Сколько вызовов ИИ
     public var requests: Int64

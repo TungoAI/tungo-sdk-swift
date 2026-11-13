@@ -160,7 +160,9 @@ final class ReadmeExamplesTests: XCTestCase {
     }
 
     private static let proposal = #"""
-        {"approval":{"allowed":true,"blocked_by_blockers":false,"reason":null,"requires_right":"approve"},"blocker_count":0,
+        {"approval":{"allowed":true,"blocked_by_blockers":false,"reason":null,"requires_right":"approve"},
+         "approval_request":{"can_request":false,"href":"/p/P-000042/request-approval","requested":null},"blocker_count":0,
+         "origin":{"batch_id":null,"dialog_id":null,"run_id":null,"source":"chat"},"status_reason":null,
          "counterparty":null,"created_at":"2026-11-09T15:00:00Z","dialog_id":null,"document_number":null,"href":"/p/P-000042",
          "id":"P-000042","kind":"sale","kind_title":"Sale","level":"l1","level_title":"L1","line_count":1,"status":"previewed",
          "status_title":"Awaiting","title":"Sale","total":{"amount":45000.5,"amount_tiyn":4500050,"formatted":"45 000,50"},
@@ -188,7 +190,7 @@ final class ReadmeExamplesTests: XCTestCase {
         }
         if path.hasSuffix("/proposals") {
             let next = request.query.contains("cursor=") ? "null" : "\"c2\""
-            return .json(200, #"{"counts":{},"data":[\#(proposal)],"next_cursor":\#(next),"total":2}"#)
+            return .json(200, #"{"approval_requested_count":0,"counts":{},"data":[\#(proposal)],"next_cursor":\#(next),"total":2}"#)
         }
         if path == "/v1/companies" {
             return .json(200, #"{"data":[]}"#, headers: ["X-Request-Id": "req_1", "X-RateLimit-Remaining": "99"])

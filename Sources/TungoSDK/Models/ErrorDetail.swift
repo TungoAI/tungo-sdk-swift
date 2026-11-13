@@ -6,19 +6,63 @@ import Foundation
 public struct ErrorDetail: Codable, Hashable, Sendable {
     /// При code = login_method_not_allowed — какими способами входа организация пускает к своим данным: email_otp — код из почты, google, apple, telegram, sso — SSO организации. Предложить выйти и войти одним из них.
     public var allowedMethods: [ErrorDetailAllowedMethodItem]?
+    /// При code = subscription_unpaid_debt — сколько оплатить, в тиынах: сумма всех неоплаченных счетов подписки.
+    public var amountTiyn: Int64?
     /// Уточнение вида: по нему выбирается действие интерфейса (кнопка «Пополнить», «Войти иначе»…). Нет поля — хватает type и message. Известные коды:
+    /// - `cannot_ban_self` (409) — админка: закрыть вход самому себе нельзя
+    /// - `user_not_banned` (409) — админка: вход этому пользователю не закрыт — открывать нечего
     /// - `sso_domain_taken` (409) — домен SSO уже подтверждён другой организацией
     /// - `sso_last_verified_domain` (409) — включён обязательный вход, а это последний подтверждённый домен — сначала выключить обязательный вход
     /// - `sso_login_required` (400) — включить обязательный вход можно только из сессии, открытой через SSO этой организации
+    /// - `login_methods_lockout` (400) — новый список способов входа запер бы автора правки или админов организации: показать message и предложить добавить в список способ, которым они входят
     /// - `domain_verification_failed` (400) — запись DNS для домена не найдена или не совпала — проверить и повторить
     /// - `oidc_openid_scope_required` (400) — в scopes сервера входа OIDC нет openid — добавить её: без неё вход через SSO не пройдёт
     /// - `enterprise_only` (403) — возможность есть только на тарифе Enterprise
+    /// - `team_only` (403) — раздел команды (сотрудники, приглашения, роли, политики, журнал и расходы организации, покупка мест, подключения SSO) запрошен для личной организации — он есть только у Team и Enterprise; кабинету показать «это есть в тарифе Team»
+    /// - `team_checkout_required` (403) — команду нельзя завести без оплаты: она появляется вместе с тарифом Team — POST /v1/team-checkouts; кабинету вести на «Оформить Team»
+    /// - `team_plan_required` (403) — подключить SSO и включить обязательный вход может только организация с оплаченным тарифом Team (или Enterprise): команда заведена, но тариф не оформлен или не оплачен — показать оформление тарифа
     /// - `groups_limit` (429) — достигнут предел групп в организации
     /// - `custom_roles_limit` (429) — достигнут предел своих ролей в организации
     /// - `group_managed_by_directory` (409) — группа из каталога: название и состав меняются только там
     /// - `group_member_not_in_workspace` (400) — в группу можно добавить только сотрудника этой организации
     /// - `role_above_ceiling` (400) — роль даёт права выше потолка организации
     /// - `unknown_model` (400) — такой модели нет — список в available_models
+    /// - `price_required` (400) — админка, тариф целиком: у платного тарифа нужна цена (price)
+    /// - `adjustment_amount_zero` (400) — админка, корректировка баланса: сумма — ноль; указать, сколько начислить (плюс) или списать (минус)
+    /// - `adjustment_over_limit` (400) — админка, корректировка баланса: сумма за раз больше потолка из настройки billing.adjustment — разбить на части или поднять потолок (суперадминистратор)
+    /// - `adjustment_note_required` (400) — админка, корректировка баланса: пояснение из одних пробелов — написать причину от 3 знаков
+    /// - `adjustment_key_invalid` (400) — админка, корректировка баланса: ключ повтора не 8–200 знаков (по HTTP обычно раньше ловится как validation_failed)
+    /// - `adjustment_key_reused` (409) — админка, корректировка баланса: этот idempotency_key уже применён с другой суммой или пояснением — для новой корректировки нужен новый ключ (новое нажатие «Применить»)
+    /// - `adjustment_exceeds_balance` (409) — админка, корректировка баланса: списание больше свободного остатка (баланс минус брони идущих вызовов; сколько можно — в message) — уменьшить сумму
+    /// - `site_post_not_found` (404) — админка, сайт: статьи нет
+    /// - `site_slug_taken` (409) — админка, сайт: статья с таким адресом уже есть
+    /// - `site_slug_locked` (409) — админка, сайт: адрес опубликованной статьи не меняется
+    /// - `site_post_incomplete` (409) — админка, сайт: статью нельзя опубликовать — нет одной из языковых версий, поля или в тексте HTML; фразы — в error.blockers
+    /// - `site_post_not_published` (409) — админка, сайт: статья не опубликована — снимать нечего
+    /// - `site_post_published` (409) — админка, сайт: опубликованную статью не удалить — сначала снять с сайта
+    /// - `site_legal_not_found` (404) — админка, сайт: такого документа в наборе нет
+    /// - `site_legal_revision_not_found` (404) — админка, сайт: у документа нет редакции с таким номером
+    /// - `site_draft_changed` (409) — админка, сайт: черновик статьи или документа изменился после чтения (draft_version не совпал) — перечитать, проверить и публиковать заново
+    /// - `site_legal_no_draft` (409) — админка, сайт: у документа нет черновика — публиковать нечего
+    /// - `site_legal_unchanged` (409) — админка, сайт: черновик совпадает с действующей редакцией
+    /// - `site_legal_unsafe` (409) — админка, сайт: в тексте документа HTML или опасная ссылка; фразы — в error.blockers
+    /// - `site_legal_publish_requires_superadmin` (403) — админка, сайт: редакцию документа публикует только суперадминистратор; черновик готовит любой администратор
+    /// - `site_legal_date_before_previous` (400) — админка, сайт: дата редакции раньше прежней редакции
+    /// - `site_trackers_requires_superadmin` (403) — админка, сайт: счётчики сайта меняет только суперадминистратор
+    /// - `site_trackers_changed` (409) — админка, сайт: счётчики изменили после чтения (version не совпал) — перечитать и проверить заново
+    /// - `site_rebuild_not_configured` (409) — админка, сайт: запуск пересборки сайта не настроен на сервере
+    /// - `lago_rejected` (409) — админка, тариф целиком: Lago отказал по существу (4xx, текст Lago в message) — правила не изменены, повтор без правки не поможет
+    /// - `price_mismatch` (400) — админка, тариф целиком: цена не сходится с правилами (место без per_seat, per_seat без цены места, цена у бесплатного)
+    /// - `pricing_requires_superadmin` (403) — цены моделей (POST /admin/v1/usage-rates) и тарифы (PUT /admin/v1/plans/{code}, …/full) меняет только суперадминистратор
+    /// - `price_change_too_large` (400) — цена модели или тарифа меняется за раз сильнее, чем разрешает настройка billing.price_change (max_factor) — проверить нули или сначала поднять предел
+    /// - `price_zero_needs_flag` (400) — цена модели или плата за период тарифа обнуляется — только с явным allow_zero: true
+    /// - `speech_disabled` (404) — голосовой ввод на сервере не включён — кнопку микрофона спрятать (speech.enabled в GET /v1/me)
+    /// - `speech_bad_lang` (400) — голосовой ввод: lang не указан или не из speech.languages
+    /// - `speech_too_large` (413) — голосовой ввод: запись больше предела (настройка speech.limits) — записать короче
+    /// - `speech_bad_format` (415) — голосовой ввод: тип записи не принимается, запись пуста или повреждена — записать заново
+    /// - `speech_too_long` (422) — голосовой ввод: запись длиннее speech.max_seconds — записать короче или по частям
+    /// - `speech_rate_limited` (429) — голосовой ввод: слишком часто или исчерпан суточный потолок человека — показать error.message, повторить после Retry-After
+    /// - `speech_unavailable` (503) — голосовой ввод: распознавание сейчас недоступно — повторить позже или набрать вопрос с клавиатуры
     /// - `model_not_allowed` (403) — политика организации не разрешает эту модель, а подходящей разрешённой нет — админу дополнить список
     /// - `retention_too_short` (400) — срок хранения меньше наименьшего
     /// - `audit_export_range` (400) — неверный период выгрузки журнала: конец раньше начала или период слишком длинный
@@ -28,6 +72,11 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `login_denied` (403) — вход из 1С отклонён на сайте Tungo — 1С показывает отказ
     /// - `code_expired` (410) — код входа из 1С устарел или уже использован — 1С просит новый код
     /// - `code_gone` (410) — код входа из 1С уже подтверждён, отклонён или устарел — на сайте подтверждать нечего
+    /// - `link_expired` (401) — вход в Tungo из 1С устарел: вышел срок ключа от входа или 1С долго не обращалась (onec.connector.link_key_ttl_days, link_idle_days) — 1С просит войти заново
+    /// - `extension_outdated` (400) — расширение Tungo для 1С старой версии: не шлёт protocol ≥ 2 и не умеет показывать число сверки — обновить расширение
+    /// - `match_required` (400) — подтверждение входа из 1С без числа сверки: человек нажимает на странице число, показанное в окне его 1С
+    /// - `onec_link_wrong_match` (409) — на странице нажато не то число сверки: код входа из 1С погашен, человек час не может подтверждать входы из 1С
+    /// - `onec_link_locked` (429) — недавно было нажато не то число сверки — подтверждать входы из 1С можно снова через час (Retry-After)
     /// - `invalid_api_key` (401) — ключ API неверен (опечатка или удалён)
     /// - `key_revoked` (401) — ключ API отозван (при правке ключа — 409 с тем же code: отозванный ключ не меняется)
     /// - `key_expired` (401) — срок ключа API истёк — сменить секрет (POST …/api-keys/{id}/roll: срок начнётся заново) или выпустить новый (при правке срока — 409 с тем же code: PATCH истёкший ключ не оживляет)
@@ -40,6 +89,7 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `balance_exhausted` (402) — баланс доп. использования кончился. Владельцу/админу — «Пополнить баланс» или включить автопополнение; остальным — сообщить им
     /// - `workspace_cap_reached` (402) — достигнут месячный потолок доп. использования организации. resets_at — 1-е число следующего месяца, 00:00 по Алматы; раньше — если админ поднимет потолок
     /// - `report_busy` (429) — сейчас собирается много отчётов команды: повторить через время из Retry-After
+    /// - `access_keys_unavailable` (503) — админ-API: ключи команды Cloudflare Access не получены — пропуск проверить нечем, повторить через минуту
     /// - `report_timeout` (503) — отчёт команды не успел собраться: сократить период или выбрать разбивку по месяцам
     /// - `company_cap_reached` (402) — достигнут месячный потолок доп. использования компании. Письмо владельцу и админам уже отправлено. resets_at — 1-е число; раньше — если админ поднимет потолок (PUT /v1/workspaces/{ws}/team/company-caps/{co})
     /// - `member_cap_reached` (402) — достигнут личный месячный потолок доп. использования сотрудника. resets_at — 1-е число; раньше — если админ поднимет его потолок
@@ -48,7 +98,9 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `platform_cap_reached` (402) — достигнут месячный потолок трат платформы. resets_at — 1-е число следующего месяца, 00:00 по Алматы; раньше — поднять потолок в PUT /v1/workspaces/{ws}/platform/account
     /// - `platform_disabled` (402) — платформа выключена в организации: вызовы по ключам и автоматизации остановлены. Включить — PUT /v1/workspaces/{ws}/platform/account
     /// - `free_plan_chat_only` (402) — бесплатный тариф: пачки из кабинета только на платных тарифах. Ключам API и автоматизациям тариф не нужен
-    /// - `free_limit_unavailable` (402) — бесплатный лимит этой учётной записи не положен (проверка регистрации или решение администратора) — оформить тариф
+    /// - `free_limit_unavailable` (402) — бесплатный лимит этой учётной записи не положен; почему — error.free_blocked_reason, готовый текст с причиной и тем, что делать, — message (ru или kk по языку ответов ИИ из профиля)
+    /// - `plan_company_limit` (402) — в организации уже столько компаний не в архиве, сколько разрешает тариф (max_companies в GET /v1/plans; limit и plan_code — в ответе): новую не завести и из архива не вернуть. Убрать лишнюю в архив или перейти на тариф больше
+    /// - `effort_not_in_plan` (402) — поле effort в чате на тарифе без выбора усилия (max_effort тарифа null, например бесплатный): ход не начат. Прислать вопрос без effort или оформить платный тариф
     /// - `model_not_in_plan` (402) — модель сильнее потолка тарифа (plans.model_ceiling): вызов не сделан; более сильные модели — на платных тарифах
     /// - `missing_permission` (403) — не хватает права в компании (или у ключа API); какого — в поле permission
     /// - `login_method_not_allowed` (403) — организация пускает к своим данным только после входа другим способом; какими — в allowed_methods. Предложить выйти и войти так
@@ -64,6 +116,7 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `scenario_output_required` (409) — у сценария форма итога, а в замене (PUT) нет ни steps, ни output: передайте output явно (null — снять форму)
     /// - `automation_queue_full` (429) — у компании слишком много запусков в очереди: повторите позже (событие хука отправитель повторит сам)
     /// - `restarting` (503) — сервис перезапускается: новый ход не начат — повторите через Retry-After
+    /// - `team_checkout_forbidden` (403) — оформление Team: человек больше не владелец и не админ команды этого оформления — продолжить нельзя
     /// - `company_suspended` (403) — работа с компанией приостановлена (решение платформы или оплаты); карточка видна, работать, править и архивировать нельзя (архив — 409 с тем же code)
     /// - `company_archived` (403) — компания в архиве: карточка видна, работать с ней нельзя. Вернуть — POST /v1/companies/{company_id}/unarchive (владелец компании или владелец/админ организации)
     /// - `workspace_blocked` (403) — организация заблокирована администратором платформы — только поддержка Tungo
@@ -71,6 +124,7 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `cors_not_supported` (403) — вызов API из чужого браузерного кода (CORS) не поддерживается: ключ API — секрет сервера
     /// - `api_keys_disabled_by_policy` (403) — политика организации запрещает ключи API
     /// - `owner_role_reserved` (403) — владельца компании назначает, меняет и снимает только владелец или админ организации
+    /// - `own_role_reserved` (403) — свою роль в компании управляющий участниками не меняет — только владелец или админ организации
     /// - `role_above_yours` (403) — у выдаваемой (или снимаемой) роли есть права, которых нет у вас; роль — в поле role, лишние права — в permissions
     /// - `not_key_creator` (403) — менять компании, права, срок и секрет ключа, снимать и поднимать его пределы записи в 1С может только тот, кто его выпустил (ужесточить пределы может любой админ)
     /// - `transfer_wider_than_target` (403) — передать ключ нельзя: у нового владельца нет нужного права (или доступа) в одной из компаний ключа
@@ -83,10 +137,27 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `not_own_key` (403) — по ключу API виден только расход самого этого ключа
     /// - `webhooks_not_in_plan` (403) — вебхуков нет в тарифе организации
     /// - `admin_2fa_required` (403) — админ-API: у администратора платформы нет второго фактора или эта сессия не подтверждена кодом приложения-аутентификатора (POST /v1/auth/two-factor/enable, затем verify-totp)
+    /// - `access_pass_invalid` (401) — админ-API: пропуск Cloudflare Access не принят (подпись, издатель, приложение) — обновить страницу админки и войти в Access заново
+    /// - `access_pass_expired` (401) — админ-API: срок пропуска Cloudflare Access вышел — обновить страницу админки
+    /// - `access_pass_no_email` (403) — админ-API: пропуск Cloudflare Access без почты человека (сервисный токен) не принимается
+    /// - `access_user_not_found` (403) — админ-API: в Tungo нет пользователя с почтой из пропуска Cloudflare Access
+    /// - `access_email_unverified` (403) — админ-API: почта пользователя из пропуска Cloudflare Access в Tungo не подтверждена
+    /// - `access_not_admin` (403) — админ-API: у пользователя из пропуска Cloudflare Access нет роли платформы
+    /// - `manual_charge_over_cap` (403) — ручное списание с карты больше настройки billing.manual_charge (за раз или за сутки с организации) — только суперадминистратор
+    /// - `setting_requires_superadmin` (403) — денежную, антифрод или защитную настройку платформы (у неё guarded=true в списке настроек) меняет только суперадминистратор
+    /// - `setting_reason_required` (400) — смена денежной или защитной настройки платформы — только с причиной (reason, 3–500 символов)
+    /// - `staff_ban_requires_superadmin` (403) — закрыть или открыть вход сотруднику платформы может только суперадминистратор
     /// - `two_factor_required` (403) — отключить второй фактор, показать его секрет или выпустить резервные коды — только после кода из приложения-аутентификатора в этой сессии
+    /// - `two_factor_email_code_required` (403) — сотрудник платформы (admin, admin_pd, superadmin) включает и отключает второй фактор (POST /v1/auth/two-factor/enable, disable) только со свежим кодом из почты в поле email_code — запросить код: POST /v1/auth/two-factor/email-code
+    /// - `two_factor_email_code_invalid` (400) — включение или отключение второго фактора сотрудником: неверный код из почты (email_code) — ввести ещё раз или запросить новый
+    /// - `two_factor_email_code_expired` (400) — включение или отключение второго фактора сотрудником: код из почты устарел, уже использован или попытки кончились — запросить новый (POST /v1/auth/two-factor/email-code)
+    /// - `two_factor_email_code_not_needed` (400) — POST /v1/auth/two-factor/email-code: код из почты нужен только сотрудникам платформы — остальные включают второй фактор без него
+    /// - `target_two_factor_required` (409) — смена ролей платформы: новую роль (admin, admin_pd, superadmin) можно выдать только человеку с уже включённым и подтверждённым вторым фактором; снять роль можно и без него
+    /// - `no_companies_permissions` (400) — ключу без доступа к компаниям (no_companies) нельзя дать права, действующие в компаниях: убрать их или выбрать компании
     /// - `webhooks_require_all_companies` (403) — вебхуки — только ключу на все компании организации (при выпуске ключа — 400 с тем же code)
     /// - `audit_requires_all_companies` (403) — журнал организации — только ключу на все компании организации
     /// - `policy_blocked` (403) — одобрение: организация не доверяет ИИ записывать такой документ этим способом (поле level — уровень доверия); одобрить по одному или поднять уровень
+    /// - `onec_copy_disabled` (403) — загрузка копии базы 1С отключена на платформе: вариант «Загрузить копию базы» спрятать (onec.copy_upload в GET /v1/me), предложить 1С напрямую или Tungo Connector
     /// - `onec_read_only` (403) — одобрение: у пользователя 1С из подключения нет права записи — дать права в 1С
     /// - `validation_failed` (400) — тело или параметры запроса не прошли проверку: что не так с каждым полем — в fields (путь, код, текст по-русски). Подсветить поля формы; общий message — над формой
     /// - `invalid_json` (400) — тело запроса — не JSON-объект
@@ -95,6 +166,19 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `email_code_unavailable` (400) — удаление аккаунта: у аккаунта нет почты для кода (вход через Telegram) — подтверждать свежим входом, без кода
     /// - `deletion_code_invalid` (400) — удаление аккаунта: неверный код из письма; сколько попыток осталось — attempts_left
     /// - `deletion_code_expired` (400) — удаление аккаунта: код истёк, попытки кончились или код не запрашивался — запросить новый (POST /v1/me/deletion/code)
+    /// - `email_required` (403) — вход через Telegram, а своей почты у аккаунта ещё нет: показать обязательный экран «Укажите почту» (POST /v1/me/email, затем POST /v1/me/email/verify); до привязки открыты только профиль, привязка, удаление аккаунта и выход
+    /// - `email_already_set` (409) — привязка почты: у аккаунта уже есть своя почта — экран «Укажите почту» не нужен, перечитать GET /v1/me
+    /// - `email_invalid` (400) — привязка почты: служебная почта Telegram (…@telegram.invalid) — попросить свою
+    /// - `disposable_email` (403) — привязка почты: временная почта не принимается — попросить постоянную
+    /// - `sso_required` (403) — привязка почты: для адреса вход только через SSO организации — код не шлём, попросить другую почту
+    /// - `email_code_invalid` (400) — привязка почты: неверный код из письма; сколько попыток осталось — attempts_left
+    /// - `email_code_expired` (400) — привязка почты: код истёк, попытки кончились или код не запрашивался — запросить новый (POST /v1/me/email)
+    /// - `email_binding_stale` (409) — привязка почты: аккаунт или сессия изменились, пока шла проверка — запросить код заново
+    /// - `telegram_account_has_data` (409) — привязка почты: у почты уже есть аккаунт Tungo, а в аккаунте Telegram уже есть данные — сами не объединяем: указать другую почту или написать в поддержку
+    /// - `telegram_already_linked` (409) — привязка почты: к аккаунту этой почты уже привязан другой Telegram — войти по почте и отвязать его или указать другую почту
+    /// - `email_unavailable` (409) — привязка почты: эту почту привязать нельзя — указать другую или написать в поддержку
+    /// - `mentions_invalid` (400) — чат: поле mentions неверного вида — список { type, id } из поиска упоминаний
+    /// - `mention_type_unknown` (400) — поиск упоминаний: неизвестный вид в types
     /// - `unsafe_url` (400) — адрес вебхука недопустим (внутренняя сеть, не HTTPS)
     /// - `idempotency_key_invalid` (400) — Idempotency-Key неверного вида
     /// - `payload_too_large` (413) — тело запроса (или события хука) больше допустимого; пределы — настройки платформы
@@ -106,6 +190,7 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `onec_rejected` (400) — одобрение: 1С отклонила документ (причина — в message): исправить в 1С или построить предложение заново
     /// - `proposal_not_found` (404) — предложения с таким id нет в компании
     /// - `export_link_expired` (404) — ссылка на архив выгрузки истекла или неверна — получить новую: GET /v1/me/export
+    /// - `mention_not_found` (404) — чат: упомянутого объекта нет или к нему нет доступа (номер в списке mentions — поле index); ход не начат
     /// - `batch_not_found` (404) — одобрение пачкой: задания с таким batch_id нет (или в нём нет предложений)
     /// - `idempotency_in_progress` (409) — первый запрос с этим Idempotency-Key ещё выполняется — подождать и повторить, придёт тот же ответ
     /// - `idempotency_response_not_kept` (409) — запрос с этим Idempotency-Key уже выполнен, но копия ответа не хранится (в нём персональные данные): результат — по ссылке в ответе (dialog_url) или в списке; статус первого ответа — original_status
@@ -115,6 +200,7 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `wrong_status` (409) — предложение уже не в том состоянии (поле status — нынешнее): обновить его
     /// - `wrong_state` (409) — запуск автоматизации уже не в том состоянии (поле state — нынешнее)
     /// - `dialog_closed` (409) — разговор закрыт (поле reason — почему): начать новый
+    /// - `approval_not_needed` (409) — отправить на одобрение: у вас самого есть право одобрять — записать документ обычным одобрением
     /// - `dialog_id_taken` (409) — разговор с таким dialog_id уже есть — для нового прислать другой id или не присылать его
     /// - `turn_in_progress` (409) — в разговоре уже идёт ход ИИ (поле turn — его номер): дождаться его конца или остановить
     /// - `turn_superseded` (409) — читаемый ход уже закончился и идёт следующий (поле turn) — читать его с начала
@@ -127,12 +213,22 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `onec_conflict` (409) — одобрение: 1С отказала из-за конфликта (объект занят или изменён) — повторить позже
     /// - `onec_not_found` (409) — одобрение: в 1С нет объекта, на который ссылается документ — построить предложение заново
     /// - `plan_limit_reached` (429) — лимит окна тарифа исчерпан; resets_at и Retry-After — когда обновится. Показать время; если в message предложено доп. использование — дать кнопку включить
-    /// - `rate_limited` (429) — слишком часто (по ключу API, уведомления ePay с одного адреса, попытки кода второго фактора) — подождать Retry-After секунд
+    /// - `rate_limited` (429) — слишком часто (по ключу API, уведомления ePay с одного адреса, формы банка от одного человека, попытки кода второго фактора) — подождать Retry-After секунд
     /// - `concurrent_turns_limit` (429) — по ключу API уже идёт предельное число ходов ИИ одновременно — дождаться окончания
+    /// - `parallel_turns_limit` (429) — у человека уже идёт предельное число ходов ИИ одновременно (тариф без доп. использования, настройка usage.parallel_turns) — дождаться ответа на предыдущие вопросы; Retry-After
     /// - `api_keys_limit` (429) — в организации предельное число действующих ключей API — отозвать ненужные
     /// - `webhook_endpoints_limit` (429) — предельное число адресов вебхуков — удалить ненужные
+    /// - `enterprise_request_rate` (429) — слишком много заявок на Enterprise от одного человека за окно (настройка enterprise.request_rate): повторить после Retry-After
+    /// - `unknown_workspace` (400) — workspace_id в заявке на Enterprise — не организация этого человека
+    /// - `plan_not_for_team` (400) — оформление Team: тариф бесплатный или не для команды — выбрать тариф вида team из GET /v1/plans
+    /// - `plan_not_found` (404) — оформление Team: тарифа с таким кодом нет или он выключен
+    /// - `team_checkout_busy` (409) — оформление Team с этим ключом уже выполняется другим запросом — повторить через несколько секунд
+    /// - `team_checkout_closed` (409) — оформление Team закрыто (status в ответе: cancelled или expired) — начать новое с новым idempotency_key
+    /// - `team_checkout_completed` (409) — оформление Team уже оплачено — отменять нечего; подписку отменяют в оплате команды
+    /// - `too_many_team_checkouts` (409) — у человека уже max_open незавершённых оформлений Team — завершить или отменить их (DELETE /v1/team-checkouts/{id})
     /// - `export_too_soon` (429) — выгрузку данных можно запрашивать не чаще раза в сутки: next_request_at и Retry-After — когда можно снова
     /// - `hook_rate_limited` (429) — приём событий хука: больше automations.hook_events_per_minute в минуту — повторить через Retry-After секунд
+    /// - `lago_unavailable` (503) — админка, тариф целиком: Lago не настроен или не ответил (сеть, 5xx) — правила не изменены, повторить позже
     /// - `model_price_missing` (503) — у модели ИИ не задана цена — сбой настройки платформы, ничего не списано; повторить позже
     /// - `data_export_disabled` (503) — выгрузка данных на сервере не настроена (поддержка Tungo)
     /// - `webhooks_disabled` (503) — вебхуки на сервере не настроены
@@ -150,8 +246,9 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `subscription_kind_mismatch` (409) — админка: действующая подписка оформлена на другой вид организации — вид не меняется, пока она идёт
     /// - `enterprise_features_active` (409) — админка: у организации подключены SSO или SCIM — сначала отключить, потом снимать Enterprise
     /// - `too_many_members_for_personal` (409) — админка: в личной организации один человек — сначала убрать остальных участников
-    /// - `open_debt` (409) — есть неоплаченный счёт — сначала оплатить; в плане удаления этот же код лежит в blockers
+    /// - `open_debt` (409) — есть неоплаченный счёт — сначала оплатить; в плане удаления этот же код лежит в blockers; так же отказывает удаление аккаунта (workspaces — у каких пространств долг)
     /// - `active_work` (409) — в организации идут ходы ИИ или автоматизации — дождаться окончания и повторить; в плане удаления этот же код лежит в blockers
+    /// - `deletion_guard_refused` (409) — внутреннее: условие вызывающего на удаление организации не выполнено (уборка черновика Team) — человеку не уходит
     /// - `deletion_already_scheduled` (409) — удаление организации уже запланировано — показать дату из плана
     /// - `deletion_purging` (409) — очистка организации уже идёт — отменить её нельзя
     /// - `workspace_deleting` (409) — админка: организация удаляется по просьбе владельца — блок удаления снимает только отмена удаления
@@ -162,11 +259,13 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `not_per_seat` (409) — этот тариф не считает оплату за место — докупка не нужна, предел мест показан в ответе GET …/seats
     /// - `subscription_ended` (409) — возобновление: период отменённой подписки уже закончился — ничего не списано, оформить тариф заново (повторный PUT — обычное оформление)
     /// - `subscription_busy` (409) — подписка уже меняется другим запросом (отмена или возобновление) — обновить экран через несколько секунд
+    /// - `subscription_unpaid_debt` (409) — оформление или смена тарифа: есть неоплаченный счёт (и после отмены) — показать message и сумму amount_tiyn; кнопка «Оплатить» — POST …/billing/payments/{payment_id}/pay-form, payment_id null — к списку счетов
     /// - `subscription_ending` (409) — подписка отменена и закончится в конце периода — места не докупаются и не сокращаются
     /// - `seats_unpaid_debt` (409) — подписка просрочена — сначала оплатить счёт; участники остаются, новых приглашать нельзя
     /// - `idempotency_conflict` (409) — докупка: этот ключ уже использован с другим числом мест — для новой покупки нужен новый ключ
     /// - `seat_quote_changed` (409) — докупка: сумма изменилась (другой день или новая цена), деньги не списаны — показать новую сумму из поля и спросить снова
     /// - `no_paid_seats` (409) — оплаченных мест ещё нет — сокращать нечего
+    /// - `first_seats_below_occupied` (409) — первая покупка мест включает тариф всей организации — мест не меньше required_seats (минимум тарифа или участники с приглашениями, occupied); деньги не списаны
     /// - `seats_below_occupied` (409) — занято больше мест, чем просите оставить — сначала убрать участников или отозвать приглашения
     /// - `not_enterprise` (409) — админка: места по договору есть только у Enterprise — сначала поставить вид
     /// - `per_seat_plan_change` (409) — смена тарифа с оплатой за место не делается сразу: Lago взял бы плату за места дважды. Отменить и оформить новый с конца периода
@@ -175,6 +274,11 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     /// - `seats_over_max` (400) — мест больше предела одной организации (team.limits.max_seats) — обратиться в поддержку
     /// - `seats_above_paid` (400) — PUT …/seats только сокращает; новые места — через POST …/seats с оплатой
     /// - `onec_check_running` (429) — проверка связи 1С уже идёт у этой компании, у вас (другая компания) или у двух других компаний организации — дождаться её итога и повторить (Retry-After)
+    /// - `invitation_not_found` (404) — приглашение до входа: такого приглашения нет — проверить ссылку из письма
+    /// - `invitation_expired` (410) — приглашение до входа: срок истёк — попросить новое
+    /// - `invitation_revoked` (410) — приглашение до входа: отозвано — попросить новое
+    /// - `invitation_accepted` (410) — приглашение до входа: уже принято — войти, организация уже в списке
+    /// - `invitation_rejected` (410) — приглашение до входа: отклонено — попросить новое
     /// - `invitation_resend_too_soon` (429) — письмо с приглашением уже отправлено только что — подождать Retry-After секунд
     /// - `seats_exhausted` (429) — свободные места закончились: докупите места или освободите их, отозвав приглашение
     /// - `seat_price_unknown` (503) — цена места сейчас неизвестна (тариф не прочитан или настроен неверно), деньги не списаны — повторить позже
@@ -185,14 +289,22 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     public var code: String?
     /// При code = validation_failed — ошибки по полям, в порядке проверки; у одного поля может быть несколько.
     public var fields: [FieldError]?
+    /// При code = free_limit_unavailable. Главная причина отказа в бесплатном лимите: `admin_decision` — решение администратора; `temporary_email` — учётная запись на временной почте; `hidden_email` — скрытая почта Apple; `email_used` — на эту почту лимит уже получен в другой учётной записи; `device_used` — с этого устройства лимит уже получен в другой учётной записи; `network_limit` — при регистрации из этой сети уже было получено несколько лимитов; `company_used` — у компании (БИН) лимит уже используется в другой учётной записи; `other` — причина не уточняется. Готовый текст для человека — message
+    public var freeBlockedReason: ErrorDetailFreeBlockedReason?
     /// Готовый текст для человека по-русски: что случилось, что делать и к кому обратиться. Показывать как есть; не разбирать — формулировки меняются.
     public var message: String
+    /// Тот же срок моментом времени — ISO 8601, UTC: когда запрос можно повторить.
+    public var nextRequestAt: String?
+    /// При code = subscription_unpaid_debt — платёж для кнопки «Оплатить» (…/billing/payments/{payment_id}/pay-form); null — вести к списку счетов.
+    public var paymentID: String?
     /// При code = missing_permission — какого права не хватает: права в компании (company.read, company.manage, company.members.manage, onec.connect, proposals.create, proposals.approve, chat.use, audit.read, automations.manage) или права только ключа API (automations.read, webhooks.manage). Показать «нужно право …» и предложить попросить админа (или выпустить ключ с этим правом).
     public var permission: String?
     /// При code = role_above_yours — права этой роли, которых нет у того, кто выдаёт. Показать списком: «у роли есть права, которых нет у вас: …».
     public var permissions: [String]?
     /// Когда ограничение снимется само — ISO 8601, UTC. Есть у plan_limit_reached (конец окна тарифа) и у месячных потолков (workspace_cap_reached, company_cap_reached, member_cap_reached, key_cap_reached, platform_cap_reached — 1-е число, 00:00 по Алматы). Показать в местном времени: «Лимит обновится в 14:30». Нет поля — само не пройдёт.
     public var resetsAt: String?
+    /// При отказе по частоте (429) на адресах экрана входа — через сколько секунд можно повторить (то же число, что в заголовке Retry-After). Показать таймер.
+    public var retryAfterSeconds: Int64?
     /// При code = role_above_yours — ключ роли в компании, которую нельзя выдать или снять (например chief_accountant).
     public var role: String?
     /// Вид ошибки — по нему ветвится клиент (не по тексту message). Статус HTTP у вида один, кроме invalid_request_error:
@@ -214,21 +326,31 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
         message: String,
         type: ErrorDetailType,
         allowedMethods: [ErrorDetailAllowedMethodItem]? = nil,
+        amountTiyn: Int64? = nil,
         code: String? = nil,
         fields: [FieldError]? = nil,
+        freeBlockedReason: ErrorDetailFreeBlockedReason? = nil,
+        nextRequestAt: String? = nil,
+        paymentID: String? = nil,
         permission: String? = nil,
         permissions: [String]? = nil,
         resetsAt: String? = nil,
+        retryAfterSeconds: Int64? = nil,
         role: String? = nil,
         additionalProperties: [String: JSONValue] = [:]
     ) {
         self.allowedMethods = allowedMethods
+        self.amountTiyn = amountTiyn
         self.code = code
         self.fields = fields
+        self.freeBlockedReason = freeBlockedReason
         self.message = message
+        self.nextRequestAt = nextRequestAt
+        self.paymentID = paymentID
         self.permission = permission
         self.permissions = permissions
         self.resetsAt = resetsAt
+        self.retryAfterSeconds = retryAfterSeconds
         self.role = role
         self.type = type
         self.additionalProperties = additionalProperties
@@ -236,12 +358,17 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case allowedMethods = "allowed_methods"
+        case amountTiyn = "amount_tiyn"
         case code
         case fields
+        case freeBlockedReason = "free_blocked_reason"
         case message
+        case nextRequestAt = "next_request_at"
+        case paymentID = "payment_id"
         case permission
         case permissions
         case resetsAt = "resets_at"
+        case retryAfterSeconds = "retry_after_seconds"
         case role
         case type
     }
@@ -249,12 +376,17 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         allowedMethods = try container.decodeIfPresent([ErrorDetailAllowedMethodItem].self, forKey: .allowedMethods)
+        amountTiyn = try container.decodeIfPresent(Int64.self, forKey: .amountTiyn)
         code = try container.decodeIfPresent(String.self, forKey: .code)
         fields = try container.decodeIfPresent([FieldError].self, forKey: .fields)
+        freeBlockedReason = try container.decodeIfPresent(ErrorDetailFreeBlockedReason.self, forKey: .freeBlockedReason)
         message = try container.decode(String.self, forKey: .message)
+        nextRequestAt = try container.decodeIfPresent(String.self, forKey: .nextRequestAt)
+        paymentID = try container.decodeIfPresent(String.self, forKey: .paymentID)
         permission = try container.decodeIfPresent(String.self, forKey: .permission)
         permissions = try container.decodeIfPresent([String].self, forKey: .permissions)
         resetsAt = try container.decodeIfPresent(String.self, forKey: .resetsAt)
+        retryAfterSeconds = try container.decodeIfPresent(Int64.self, forKey: .retryAfterSeconds)
         role = try container.decodeIfPresent(String.self, forKey: .role)
         type = try container.decode(ErrorDetailType.self, forKey: .type)
         additionalProperties = try TungoCoding.extra(decoder, known: Set(CodingKeys.allCases.map { $0.rawValue }), as: JSONValue.self)
@@ -263,12 +395,17 @@ public struct ErrorDetail: Codable, Hashable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(allowedMethods, forKey: .allowedMethods)
+        try container.encodeIfPresent(amountTiyn, forKey: .amountTiyn)
         try container.encodeIfPresent(code, forKey: .code)
         try container.encodeIfPresent(fields, forKey: .fields)
+        try container.encodeIfPresent(freeBlockedReason, forKey: .freeBlockedReason)
         try container.encode(message, forKey: .message)
+        try container.encodeIfPresent(nextRequestAt, forKey: .nextRequestAt)
+        try container.encodeIfPresent(paymentID, forKey: .paymentID)
         try container.encodeIfPresent(permission, forKey: .permission)
         try container.encodeIfPresent(permissions, forKey: .permissions)
         try container.encodeIfPresent(resetsAt, forKey: .resetsAt)
+        try container.encodeIfPresent(retryAfterSeconds, forKey: .retryAfterSeconds)
         try container.encodeIfPresent(role, forKey: .role)
         try container.encode(type, forKey: .type)
         try TungoCoding.encodeExtra(additionalProperties, to: encoder, known: Set(CodingKeys.allCases.map { $0.rawValue }))

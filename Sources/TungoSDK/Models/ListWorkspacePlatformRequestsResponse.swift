@@ -8,26 +8,43 @@ public struct ListWorkspacePlatformRequestsResponse: Codable, Hashable, Sendable
     public var data: [PlatformRequest]
     /// Курсор следующей страницы. Чтобы получить её — тот же запрос (с теми же фильтрами) и `?cursor=<это значение>`. null — страниц больше нет (кнопку «Ещё» спрятать). Курсор непрозрачный: не разбирать и не собирать самому, хранить только до следующего запроса. Пустой data с не-null курсором не бывает.
     public var nextCursor: String?
+    /// Сколько всего записей под этими фильтрами (курсор не учитывается). Считается не дальше 10 000: если записей больше — здесь 10 000 и total_more = true
+    public var total: Int64
+    /// true — записей больше, чем total: писать «больше 10 000», а не точное число
+    public var totalMore: Bool
 
-    public init(data: [PlatformRequest], nextCursor: String?) {
+    public init(
+        data: [PlatformRequest],
+        nextCursor: String?,
+        total: Int64,
+        totalMore: Bool
+    ) {
         self.data = data
         self.nextCursor = nextCursor
+        self.total = total
+        self.totalMore = totalMore
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case data
         case nextCursor = "next_cursor"
+        case total
+        case totalMore = "total_more"
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         data = try container.decode([PlatformRequest].self, forKey: .data)
         nextCursor = try container.decodeIfPresent(String.self, forKey: .nextCursor)
+        total = try container.decode(Int64.self, forKey: .total)
+        totalMore = try container.decode(Bool.self, forKey: .totalMore)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(data, forKey: .data)
         try container.encode(nextCursor, forKey: .nextCursor)
+        try container.encode(total, forKey: .total)
+        try container.encode(totalMore, forKey: .totalMore)
     }
 }

@@ -12,6 +12,10 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
     public var dialogID: String
     /// Ошибки хода (как error в событии error); пусто — без ошибок
     public var errors: [ChatTurnError]
+    /// Вопросы-продолжения под ответом, до 3, на языке разговора: нажатие — обычный новый вопрос с этим текстом. Пусто — предложить нечего
+    public var followups: [String]
+    /// Предложенное следующее действие; null — нет
+    public var nextAction: ChatNextAction?
     /// Открытый уточняющий вопрос: ответ — POST …/chat/{dialog_id}/answer; null — вопроса нет
     public var pendingQuestion: ChatPendingQuestion?
     /// Документы, которые ИИ подготовил в этом ходе
@@ -29,6 +33,8 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         citations: [ChatCitation],
         dialogID: String,
         errors: [ChatTurnError],
+        followups: [String],
+        nextAction: ChatNextAction?,
         pendingQuestion: ChatPendingQuestion?,
         proposals: [ChatTurnProposal],
         questions: [ChatQuestion],
@@ -40,6 +46,8 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         self.citations = citations
         self.dialogID = dialogID
         self.errors = errors
+        self.followups = followups
+        self.nextAction = nextAction
         self.pendingQuestion = pendingQuestion
         self.proposals = proposals
         self.questions = questions
@@ -53,6 +61,8 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         case citations
         case dialogID = "dialog_id"
         case errors
+        case followups
+        case nextAction = "next_action"
         case pendingQuestion = "pending_question"
         case proposals
         case questions
@@ -67,6 +77,8 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         citations = try container.decode([ChatCitation].self, forKey: .citations)
         dialogID = try container.decode(String.self, forKey: .dialogID)
         errors = try container.decode([ChatTurnError].self, forKey: .errors)
+        followups = try container.decode([String].self, forKey: .followups)
+        nextAction = try container.decodeIfPresent(ChatNextAction.self, forKey: .nextAction)
         pendingQuestion = try container.decodeIfPresent(ChatPendingQuestion.self, forKey: .pendingQuestion)
         proposals = try container.decode([ChatTurnProposal].self, forKey: .proposals)
         questions = try container.decode([ChatQuestion].self, forKey: .questions)
@@ -81,6 +93,8 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         try container.encode(citations, forKey: .citations)
         try container.encode(dialogID, forKey: .dialogID)
         try container.encode(errors, forKey: .errors)
+        try container.encode(followups, forKey: .followups)
+        try container.encode(nextAction, forKey: .nextAction)
         try container.encode(pendingQuestion, forKey: .pendingQuestion)
         try container.encode(proposals, forKey: .proposals)
         try container.encode(questions, forKey: .questions)

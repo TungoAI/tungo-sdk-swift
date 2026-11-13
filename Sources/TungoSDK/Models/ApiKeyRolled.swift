@@ -8,7 +8,7 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
     public var allCompanies: Bool
     /// С каких IP и подсетей CIDR ключ работает; с другого адреса — 403 ip_not_allowed. null — с любых
     public var allowedIps: [String]?
-    /// Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies)
+    /// Компании, к которым ключ даёт доступ (co_…); пусто у ключа на все компании (all_companies) и у ключа без компаний (no_companies)
     public var companyIDs: [String]
     /// Когда выпущен, ISO 8601 UTC
     public var createdAt: String
@@ -20,8 +20,10 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
     public var expiresAt: String
     /// id ключа (key_…) — для адресов …/api-keys/{id}
     public var id: String
-    /// Новый ключ целиком (tg_…) — один раз: показать с кнопкой «Скопировать»
-    public var key: String
+    /// Новый ключ целиком (tg_…) — один раз: показать с кнопкой «Скопировать». В повторе по Idempotency-Key — null
+    public var key: String?
+    /// Только в повторе по Idempotency-Key: почему key = null и что делать, если новый секрет потерян (сменить ещё раз)
+    public var keyNote: String?
     /// Когда ключом пользовались последний раз, ISO 8601 UTC (точность — около минуты); null — ещё ни разу
     public var lastUsedAt: String?
     /// С какого IP-адреса был последний запрос; null — ещё ни разу
@@ -30,6 +32,8 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
     public var monthlyCapTiyn: Int64?
     /// Название ключа для людей
     public var name: String
+    /// Ключ без доступа к компаниям и их 1С: company_ids пуст, all_companies = false; компаний не видит никогда. Пустой company_ids сам по себе вида не называет — смотреть на all_companies и no_companies
+    public var noCompanies: Bool
     /// Права ключа: `company.read` — читать данные компаний (есть всегда); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобрять запись в 1С; `automations.read` — видеть автоматизации; `automations.manage` — менять и запускать автоматизации; `webhooks.manage` — вебхуки всей организации
     public var permissions: [ApiKeyRolledPermissionItem]
     /// Открытая часть ключа для показа — узнать ключ среди других; сам ключ (tg_…_секрет) целиком не хранится
@@ -60,11 +64,12 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
         disabledAt: String?,
         expiresAt: String,
         id: String,
-        key: String,
+        key: String?,
         lastUsedAt: String?,
         lastUsedIp: String?,
         monthlyCapTiyn: Int64?,
         name: String,
+        noCompanies: Bool,
         permissions: [ApiKeyRolledPermissionItem],
         prefix: String,
         previousSecretValidUntil: String?,
@@ -74,7 +79,8 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
         workspaceID: String,
         writeKinds: [String]?,
         writeMaxAmountPerDayTiyn: Int64?,
-        writeMaxAmountPerDocumentTiyn: Int64?
+        writeMaxAmountPerDocumentTiyn: Int64?,
+        keyNote: String? = nil
     ) {
         self.allCompanies = allCompanies
         self.allowedIps = allowedIps
@@ -85,10 +91,12 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
         self.expiresAt = expiresAt
         self.id = id
         self.key = key
+        self.keyNote = keyNote
         self.lastUsedAt = lastUsedAt
         self.lastUsedIp = lastUsedIp
         self.monthlyCapTiyn = monthlyCapTiyn
         self.name = name
+        self.noCompanies = noCompanies
         self.permissions = permissions
         self.prefix = prefix
         self.previousSecretValidUntil = previousSecretValidUntil
@@ -111,10 +119,12 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
         case expiresAt = "expires_at"
         case id
         case key
+        case keyNote = "key_note"
         case lastUsedAt = "last_used_at"
         case lastUsedIp = "last_used_ip"
         case monthlyCapTiyn = "monthly_cap_tiyn"
         case name
+        case noCompanies = "no_companies"
         case permissions
         case prefix
         case previousSecretValidUntil = "previous_secret_valid_until"
@@ -137,11 +147,13 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
         disabledAt = try container.decodeIfPresent(String.self, forKey: .disabledAt)
         expiresAt = try container.decode(String.self, forKey: .expiresAt)
         id = try container.decode(String.self, forKey: .id)
-        key = try container.decode(String.self, forKey: .key)
+        key = try container.decodeIfPresent(String.self, forKey: .key)
+        keyNote = try container.decodeIfPresent(String.self, forKey: .keyNote)
         lastUsedAt = try container.decodeIfPresent(String.self, forKey: .lastUsedAt)
         lastUsedIp = try container.decodeIfPresent(String.self, forKey: .lastUsedIp)
         monthlyCapTiyn = try container.decodeIfPresent(Int64.self, forKey: .monthlyCapTiyn)
         name = try container.decode(String.self, forKey: .name)
+        noCompanies = try container.decode(Bool.self, forKey: .noCompanies)
         permissions = try container.decode([ApiKeyRolledPermissionItem].self, forKey: .permissions)
         prefix = try container.decode(String.self, forKey: .prefix)
         previousSecretValidUntil = try container.decodeIfPresent(String.self, forKey: .previousSecretValidUntil)
@@ -165,10 +177,12 @@ public struct ApiKeyRolled: Codable, Hashable, Sendable {
         try container.encode(expiresAt, forKey: .expiresAt)
         try container.encode(id, forKey: .id)
         try container.encode(key, forKey: .key)
+        try container.encodeIfPresent(keyNote, forKey: .keyNote)
         try container.encode(lastUsedAt, forKey: .lastUsedAt)
         try container.encode(lastUsedIp, forKey: .lastUsedIp)
         try container.encode(monthlyCapTiyn, forKey: .monthlyCapTiyn)
         try container.encode(name, forKey: .name)
+        try container.encode(noCompanies, forKey: .noCompanies)
         try container.encode(permissions, forKey: .permissions)
         try container.encode(prefix, forKey: .prefix)
         try container.encode(previousSecretValidUntil, forKey: .previousSecretValidUntil)
@@ -195,10 +209,12 @@ extension ApiKeyRolled: CustomDebugStringConvertible, CustomReflectable {
         parts.append("expiresAt: \(String(describing: expiresAt))")
         parts.append("id: \(String(describing: id))")
         parts.append("key: [REDACTED]")
+        parts.append("keyNote: \(String(describing: keyNote))")
         parts.append("lastUsedAt: \(String(describing: lastUsedAt))")
         parts.append("lastUsedIp: \(String(describing: lastUsedIp))")
         parts.append("monthlyCapTiyn: \(String(describing: monthlyCapTiyn))")
         parts.append("name: \(String(describing: name))")
+        parts.append("noCompanies: \(String(describing: noCompanies))")
         parts.append("permissions: \(String(describing: permissions))")
         parts.append("prefix: \(String(describing: prefix))")
         parts.append("previousSecretValidUntil: \(String(describing: previousSecretValidUntil))")
@@ -225,10 +241,12 @@ extension ApiKeyRolled: CustomDebugStringConvertible, CustomReflectable {
                 "expiresAt": expiresAt as Any,
                 "id": id as Any,
                 "key": "[REDACTED]" as Any,
+                "keyNote": keyNote as Any,
                 "lastUsedAt": lastUsedAt as Any,
                 "lastUsedIp": lastUsedIp as Any,
                 "monthlyCapTiyn": monthlyCapTiyn as Any,
                 "name": name as Any,
+                "noCompanies": noCompanies as Any,
                 "permissions": permissions as Any,
                 "prefix": prefix as Any,
                 "previousSecretValidUntil": previousSecretValidUntil as Any,

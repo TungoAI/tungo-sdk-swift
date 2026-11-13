@@ -16,8 +16,10 @@ public struct ApiKeyCreate: Codable, Hashable, Sendable {
     public var monthlyCapTiyn: Int64?
     /// Название ключа для людей (1–100 знаков): где он используется
     public var name: String
-    /// Права ключа (1–20): `company.read` — читать данные компаний (добавляется всегда, даже если не передано); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобрять запись документов в 1С; `automations.read` — видеть хуки, сценарии и журнал запусков; `automations.manage` — менять и запускать автоматизации; `webhooks.manage` — вебхуки всей организации (только у ключа на все её компании). Ни одно право не шире прав создателя
-    public var permissions: [String]
+    /// Ключ без доступа к компаниям и их 1С: ни одной компании он не видит — ни сейчас, ни будущих; company_ids и all_companies не передаются, права — только company.read (он ничего не открывает). По умолчанию false
+    public var noCompanies: Bool?
+    /// Права ключа (1–20): `company.read` — читать данные компаний (добавляется всегда, даже если не передано); `chat.use` — работать с ИИ-бухгалтером; `proposals.create` — готовить документы для 1С; `proposals.approve` — одобрять запись документов в 1С; `automations.read` — видеть хуки, сценарии и журнал запусков; `automations.manage` — менять и запускать автоматизации; `webhooks.manage` — вебхуки всей организации (только у ключа на все её компании). Ни одно право не шире прав создателя. Обязательно, кроме ключа с no_companies: true (ему права в компаниях не даются)
+    public var permissions: [String]?
     /// Предел записи в 1С по ключу: какие виды документов ключ может одобрять (как kinds правила автоодобрения: sale, purchase, bank_receipt, bank_payment, counterparty, contract, inventory_writeoff, cash_order_in, cash_order_out, advance_report, revert). null — любые. Без всех трёх пределов ключ с proposals.approve пишет в 1С без ограничений — тогда в ответе предупреждение write_unlimited. При изменении: не передан — не меняется; снять или добавить вид — только создатель ключа
     public var writeKinds: [ApiKeyCreateWriteKindItem]?
     /// Предел записи в 1С по ключу: сумма всех документов, одобренных ключом за день по Алматы, в тиынах. Документ с неизвестным исходом записи (1С не ответила) тоже считается. null — без предела. При изменении: не передан — не меняется; снять или поднять — только создатель ключа
@@ -27,12 +29,13 @@ public struct ApiKeyCreate: Codable, Hashable, Sendable {
 
     public init(
         name: String,
-        permissions: [String],
         allCompanies: Bool? = nil,
         allowedIps: [String]? = nil,
         companyIDs: [String]? = nil,
         expiresAt: String? = nil,
         monthlyCapTiyn: Int64? = nil,
+        noCompanies: Bool? = nil,
+        permissions: [String]? = nil,
         writeKinds: [ApiKeyCreateWriteKindItem]? = nil,
         writeMaxAmountPerDayTiyn: Int64? = nil,
         writeMaxAmountPerDocumentTiyn: Int64? = nil
@@ -43,6 +46,7 @@ public struct ApiKeyCreate: Codable, Hashable, Sendable {
         self.expiresAt = expiresAt
         self.monthlyCapTiyn = monthlyCapTiyn
         self.name = name
+        self.noCompanies = noCompanies
         self.permissions = permissions
         self.writeKinds = writeKinds
         self.writeMaxAmountPerDayTiyn = writeMaxAmountPerDayTiyn
@@ -56,6 +60,7 @@ public struct ApiKeyCreate: Codable, Hashable, Sendable {
         case expiresAt = "expires_at"
         case monthlyCapTiyn = "monthly_cap_tiyn"
         case name
+        case noCompanies = "no_companies"
         case permissions
         case writeKinds = "write_kinds"
         case writeMaxAmountPerDayTiyn = "write_max_amount_per_day_tiyn"
@@ -70,7 +75,8 @@ public struct ApiKeyCreate: Codable, Hashable, Sendable {
         expiresAt = try container.decodeIfPresent(String.self, forKey: .expiresAt)
         monthlyCapTiyn = try container.decodeIfPresent(Int64.self, forKey: .monthlyCapTiyn)
         name = try container.decode(String.self, forKey: .name)
-        permissions = try container.decode([String].self, forKey: .permissions)
+        noCompanies = try container.decodeIfPresent(Bool.self, forKey: .noCompanies)
+        permissions = try container.decodeIfPresent([String].self, forKey: .permissions)
         writeKinds = try container.decodeIfPresent([ApiKeyCreateWriteKindItem].self, forKey: .writeKinds)
         writeMaxAmountPerDayTiyn = try container.decodeIfPresent(Int64.self, forKey: .writeMaxAmountPerDayTiyn)
         writeMaxAmountPerDocumentTiyn = try container.decodeIfPresent(Int64.self, forKey: .writeMaxAmountPerDocumentTiyn)
@@ -84,7 +90,8 @@ public struct ApiKeyCreate: Codable, Hashable, Sendable {
         try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
         try container.encodeIfPresent(monthlyCapTiyn, forKey: .monthlyCapTiyn)
         try container.encode(name, forKey: .name)
-        try container.encode(permissions, forKey: .permissions)
+        try container.encodeIfPresent(noCompanies, forKey: .noCompanies)
+        try container.encodeIfPresent(permissions, forKey: .permissions)
         try container.encodeIfPresent(writeKinds, forKey: .writeKinds)
         try container.encodeIfPresent(writeMaxAmountPerDayTiyn, forKey: .writeMaxAmountPerDayTiyn)
         try container.encodeIfPresent(writeMaxAmountPerDocumentTiyn, forKey: .writeMaxAmountPerDocumentTiyn)

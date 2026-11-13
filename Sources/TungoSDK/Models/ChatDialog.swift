@@ -21,8 +21,9 @@ public struct ChatDialog: Codable, Hashable, Sendable {
     public var pdRestored: Bool
     /// true — идёт ход: дочитать его потоком GET …/chat/{id}/events?turn=<turn>
     public var running: Bool
-    /// Заголовок — первый вопрос одной строкой
+    /// Название одной строкой: человека, иначе от ИИ, иначе первый вопрос. Откуда оно — title_source
     public var title: String
+    public var titleSource: ChatTitleSource
     /// Номер текущего хода (если идёт) или число законченных ходов
     public var turn: Double
     /// Последнее изменение, ISO 8601 UTC
@@ -37,6 +38,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         pdRestored: Bool,
         running: Bool,
         title: String,
+        titleSource: ChatTitleSource,
         turn: Double,
         updatedAt: String,
         awaiting: ChatPendingQuestion? = nil,
@@ -52,6 +54,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         self.pdRestored = pdRestored
         self.running = running
         self.title = title
+        self.titleSource = titleSource
         self.turn = turn
         self.updatedAt = updatedAt
     }
@@ -67,6 +70,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         case pdRestored = "pd_restored"
         case running
         case title
+        case titleSource = "title_source"
         case turn
         case updatedAt = "updated_at"
     }
@@ -83,6 +87,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         pdRestored = try container.decode(Bool.self, forKey: .pdRestored)
         running = try container.decode(Bool.self, forKey: .running)
         title = try container.decode(String.self, forKey: .title)
+        titleSource = try container.decode(ChatTitleSource.self, forKey: .titleSource)
         turn = try container.decode(Double.self, forKey: .turn)
         updatedAt = try container.decode(String.self, forKey: .updatedAt)
     }
@@ -99,6 +104,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         try container.encode(pdRestored, forKey: .pdRestored)
         try container.encode(running, forKey: .running)
         try container.encode(title, forKey: .title)
+        try container.encode(titleSource, forKey: .titleSource)
         try container.encode(turn, forKey: .turn)
         try container.encode(updatedAt, forKey: .updatedAt)
     }

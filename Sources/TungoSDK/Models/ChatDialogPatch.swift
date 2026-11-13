@@ -4,7 +4,7 @@ import Foundation
 
 /// Новое название разговора
 public struct ChatDialogPatch: Codable, Hashable, Sendable {
-    /// Новое название, до 64 символов; пустая строка — вернуть заголовок по первому вопросу
+    /// Новое название, до 64 символов; пустая строка — вернуть автоматическое название (от ИИ, а пока его нет — первый вопрос)
     public var title: String
 
     public init(title: String) {

@@ -4,6 +4,7 @@ import Foundation
 
 /// Причина:
 /// - `budget` — кончился лимит (дня или разговора)
+/// - `parallel_turns_limit` — у человека уже идёт предельное число ходов ИИ (тариф без доп. использования) — дождаться ответа на предыдущие вопросы
 /// - `rate_limited` — сервис модели перегружен — повторите
 /// - `api` — сбой сервиса модели
 /// - `refusal` — модель отказалась отвечать
@@ -21,6 +22,8 @@ import Foundation
 public enum ChatHistoryErrorCode: TungoEnum {
     /// `budget`
     case budget
+    /// `parallel_turns_limit`
+    case parallelTurnsLimit
     /// `rate_limited`
     case rateLimited
     /// `api`
@@ -52,11 +55,12 @@ public enum ChatHistoryErrorCode: TungoEnum {
     /// A value this version of the SDK does not know.
     case unknown(String)
 
-    public static let knownCases: [ChatHistoryErrorCode] = [.budget, .rateLimited, .api, .refusal, .contextOverflow, .aborted, .maxIterations, .maxTokens, .emptyAnswer, .unexpected, .history, .`internal`, .streamFailed, .batchFailed, .batchAbandoned]
+    public static let knownCases: [ChatHistoryErrorCode] = [.budget, .parallelTurnsLimit, .rateLimited, .api, .refusal, .contextOverflow, .aborted, .maxIterations, .maxTokens, .emptyAnswer, .unexpected, .history, .`internal`, .streamFailed, .batchFailed, .batchAbandoned]
 
     public init(rawValue: String) {
         switch rawValue {
         case "budget": self = .budget
+        case "parallel_turns_limit": self = .parallelTurnsLimit
         case "rate_limited": self = .rateLimited
         case "api": self = .api
         case "refusal": self = .refusal
@@ -78,6 +82,7 @@ public enum ChatHistoryErrorCode: TungoEnum {
     public var rawValue: String {
         switch self {
         case .budget: return "budget"
+        case .parallelTurnsLimit: return "parallel_turns_limit"
         case .rateLimited: return "rate_limited"
         case .api: return "api"
         case .refusal: return "refusal"

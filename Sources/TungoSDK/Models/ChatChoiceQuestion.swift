@@ -2,8 +2,10 @@
 
 import Foundation
 
-/// Уточняющий вопрос ИИ с вариантами. Вариант «свой ответ» есть всегда и в options не входит
+/// Вопрос с вариантами: уточняющий вопрос ИИ или подтверждение действия (confirm). Вариант «свой ответ» есть всегда и в options не входит
 public struct ChatChoiceQuestion: Codable, Hashable, Sendable {
+    /// true — это не уточнение, а подтверждение действия: вопрос задала программа, действие выполнится только по кнопке согласия (первый вариант). Пропуск, свой текст и закрытие — отказ: кнопку «Пропустить» не показывать. false — обычный уточняющий вопрос ИИ
+    public var confirm: Bool
     /// Короткая подпись вопроса, до ~12 символов (для вкладки или чипа)
     public var header: String
     /// true — можно выбрать несколько вариантов (чекбоксы); false — один (радиокнопки)
@@ -14,11 +16,13 @@ public struct ChatChoiceQuestion: Codable, Hashable, Sendable {
     public var question: String
 
     public init(
+        confirm: Bool,
         header: String,
         multiSelect: Bool,
         options: [ChatChoiceOption],
         question: String
     ) {
+        self.confirm = confirm
         self.header = header
         self.multiSelect = multiSelect
         self.options = options
@@ -26,6 +30,7 @@ public struct ChatChoiceQuestion: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
+        case confirm
         case header
         case multiSelect = "multi_select"
         case options
@@ -34,6 +39,7 @@ public struct ChatChoiceQuestion: Codable, Hashable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        confirm = try container.decode(Bool.self, forKey: .confirm)
         header = try container.decode(String.self, forKey: .header)
         multiSelect = try container.decode(Bool.self, forKey: .multiSelect)
         options = try container.decode([ChatChoiceOption].self, forKey: .options)
@@ -42,6 +48,7 @@ public struct ChatChoiceQuestion: Codable, Hashable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(confirm, forKey: .confirm)
         try container.encode(header, forKey: .header)
         try container.encode(multiSelect, forKey: .multiSelect)
         try container.encode(options, forKey: .options)

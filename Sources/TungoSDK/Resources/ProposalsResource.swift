@@ -22,24 +22,30 @@ public struct ProposalsResource: Sendable {
     ///
     /// - Parameters:
     ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - approvalRequested: true — только отправленные на одобрение и ещё не решённые; false — только остальные
+    ///   - batchID: Только документы одного задания пачки (bat_…) — тот же состав, что в сводке задания и у «Одобрить и отправить в 1С». Не id задания — 400; задания нет — пустой список
     ///   - cursor: next_cursor из ответа прошлой страницы; без него — первая (самая свежая) страница. Остальные фильтры — те же, что у первой страницы.
     ///   - dateFrom: Созданные не раньше этого дня (ГГГГ-ММ-ДД, день по Алматы) A date, `YYYY-MM-DD`.
     ///   - dateTo: Созданные не позже этого дня включительно (ГГГГ-ММ-ДД, день по Алматы) A date, `YYYY-MM-DD`.
     ///   - kind: Только этих видов: один или несколько через запятую (sale, purchase, bank_receipt, bank_payment, counterparty, contract, revert, inventory_writeoff, cash_order_in, cash_order_out, advance_report). Неизвестный — 400
     ///   - limit: Сколько на странице: 1–100, по умолчанию 20
-    ///   - q: Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН и другие реквизиты документа
+    ///   - q: Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН, сумма (как пишут: «150 000,50» или 150000.5) и другие реквизиты документа
+    ///   - source: Только из этих источников (origin.source): один или несколько через запятую (chat, statement, esf, automation). Неизвестный — 400
     ///   - status: Только в этих статусах: один или несколько через запятую (previewed, approved, rejected, committed, posted, verified, mismatch, failed); без него — все. Неизвестный — 400
     ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
     /// - Returns: One page; `nextPage()` fetches the following one.
     /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
     public func list(
         companyID: String? = nil,
+        approvalRequested: ListCompanyProposalsApprovalRequested? = nil,
+        batchID: String? = nil,
         cursor: String? = nil,
         dateFrom: String? = nil,
         dateTo: String? = nil,
         kind: String? = nil,
         limit: Int? = nil,
         q: String? = nil,
+        source: String? = nil,
         status: String? = nil,
         options: RequestOptions = RequestOptions()
     ) async throws -> Page<ProposalPage> {
@@ -47,12 +53,15 @@ public struct ProposalsResource: Sendable {
         let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/proposals"
         return try await core.page(cursor: cursor, options: options) { pageCursor in
             var query = QueryBuilder()
+            query.add("approval_requested", approvalRequested)
+            query.add("batch_id", batchID)
             query.add("cursor", pageCursor)
             query.add("date_from", dateFrom)
             query.add("date_to", dateTo)
             query.add("kind", kind)
             query.add("limit", limit)
             query.add("q", q)
+            query.add("source", source)
             query.add("status", status)
             let spec = RequestSpec(method: "GET", path: path, query: query)
             return spec
@@ -73,28 +82,34 @@ public struct ProposalsResource: Sendable {
     ///
     /// - Parameters:
     ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - approvalRequested: true — только отправленные на одобрение и ещё не решённые; false — только остальные
+    ///   - batchID: Только документы одного задания пачки (bat_…) — тот же состав, что в сводке задания и у «Одобрить и отправить в 1С». Не id задания — 400; задания нет — пустой список
     ///   - cursor: next_cursor из ответа прошлой страницы; без него — первая (самая свежая) страница. Остальные фильтры — те же, что у первой страницы.
     ///   - dateFrom: Созданные не раньше этого дня (ГГГГ-ММ-ДД, день по Алматы) A date, `YYYY-MM-DD`.
     ///   - dateTo: Созданные не позже этого дня включительно (ГГГГ-ММ-ДД, день по Алматы) A date, `YYYY-MM-DD`.
     ///   - kind: Только этих видов: один или несколько через запятую (sale, purchase, bank_receipt, bank_payment, counterparty, contract, revert, inventory_writeoff, cash_order_in, cash_order_out, advance_report). Неизвестный — 400
     ///   - limit: Сколько на странице: 1–100, по умолчанию 20
-    ///   - q: Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН и другие реквизиты документа
+    ///   - q: Поиск без учёта регистра: номер предложения (P-…), номер документа 1С, контрагент (имя из превью), БИН/ИИН, сумма (как пишут: «150 000,50» или 150000.5) и другие реквизиты документа
+    ///   - source: Только из этих источников (origin.source): один или несколько через запятую (chat, statement, esf, automation). Неизвестный — 400
     ///   - status: Только в этих статусах: один или несколько через запятую (previewed, approved, rejected, committed, posted, verified, mismatch, failed); без него — все. Неизвестный — 400
     ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
     /// - Returns: A lazy `AsyncSequence` of items.
     /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
     public func listAll(
         companyID: String? = nil,
+        approvalRequested: ListCompanyProposalsApprovalRequested? = nil,
+        batchID: String? = nil,
         cursor: String? = nil,
         dateFrom: String? = nil,
         dateTo: String? = nil,
         kind: String? = nil,
         limit: Int? = nil,
         q: String? = nil,
+        source: String? = nil,
         status: String? = nil,
         options: RequestOptions = RequestOptions()
     ) -> PageSequence<ProposalPage> {
-        PageSequence { try await self.list(companyID: companyID, cursor: cursor, dateFrom: dateFrom, dateTo: dateTo, kind: kind, limit: limit, q: q, status: status, options: options) }
+        PageSequence { try await self.list(companyID: companyID, approvalRequested: approvalRequested, batchID: batchID, cursor: cursor, dateFrom: dateFrom, dateTo: dateTo, kind: kind, limit: limit, q: q, source: source, status: status, options: options) }
     }
 
     /// Одобрить пачку предложений
@@ -318,5 +333,62 @@ public struct ProposalsResource: Sendable {
         var spec = RequestSpec(method: "POST", path: path)
         spec.body = try core.encode(body)
         return try await core.send(spec, options: options, as: ProposalDecision.self)
+    }
+
+    /// Отправить на одобрение
+    ///
+    /// Человек, который готовит документы, но не вправе записывать их в 1С, просит решения у тех, у кого право proposals.approve: им уходит письмо «документы ждут решения», просьба видна в карточке и списке (approval_request, фильтр approval_requested). Статус предложения не меняется; одобряют и отклоняют обычными POST …/approve и …/reject. Повтор, пока просьба действует, — repeated: true без второго письма. Письма одному получателю по одной компании уходят не чаще раза в 15 минут (настройка платформы): просьба записывается всегда, придержанное письмо — notified: false. Отказы: 409 error.code = approval_not_needed (у вас самого есть право одобрять) и wrong_status (решение уже принято, нынешний статус — error.status); 422 has_blockers (есть блокеры — одобрить нельзя, список — error.blockers). Чужая компания и неизвестное предложение — 404, участник без права — 403.
+    ///
+    /// Доступ: proposals.create.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `POST /v1/companies/{co}/proposals/{id}/request-approval` - permission `proposals.create`
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: Номер предложения внутри компании: P- и шесть цифр (P-000123). У двух компаний номера могут совпадать
+    ///   - body: The request body. Nothing is sent when `nil`.
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The decoded response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func requestApproval(
+        companyID: String? = nil,
+        id: String,
+        body: ProposalApprovalRequestBody? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> ProposalApprovalRequestResult {
+        try await requestApprovalWithResponse(companyID: companyID, id: id, body: body, options: options).value
+    }
+
+    /// Отправить на одобрение
+    ///
+    /// Человек, который готовит документы, но не вправе записывать их в 1С, просит решения у тех, у кого право proposals.approve: им уходит письмо «документы ждут решения», просьба видна в карточке и списке (approval_request, фильтр approval_requested). Статус предложения не меняется; одобряют и отклоняют обычными POST …/approve и …/reject. Повтор, пока просьба действует, — repeated: true без второго письма. Письма одному получателю по одной компании уходят не чаще раза в 15 минут (настройка платформы): просьба записывается всегда, придержанное письмо — notified: false. Отказы: 409 error.code = approval_not_needed (у вас самого есть право одобрять) и wrong_status (решение уже принято, нынешний статус — error.status); 422 has_blockers (есть блокеры — одобрить нельзя, список — error.blockers). Чужая компания и неизвестное предложение — 404, участник без права — 403.
+    ///
+    /// Доступ: proposals.create.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `POST /v1/companies/{co}/proposals/{id}/request-approval` - permission `proposals.create`
+    ///
+    /// The same call as `requestApproval`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: Номер предложения внутри компании: P- и шесть цифр (P-000123). У двух компаний номера могут совпадать
+    ///   - body: The request body. Nothing is sent when `nil`.
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func requestApprovalWithResponse(
+        companyID: String? = nil,
+        id: String,
+        body: ProposalApprovalRequestBody? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<ProposalApprovalRequestResult> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/proposals/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/request-approval"
+        var spec = RequestSpec(method: "POST", path: path)
+        if let body { spec.body = try core.encode(body) }
+        return try await core.send(spec, options: options, as: ProposalApprovalRequestResult.self)
     }
 }

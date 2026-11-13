@@ -2,8 +2,9 @@
 
 import Foundation
 
-/// Вопрос ИИ к человеку
+/// Вопрос ИИ к человеку. Уточнение, которое ещё ждёт ответа, сюда не попадает — оно приходит только полем awaiting разговора, чтобы экран не показал его дважды
 public struct ChatHistoryQuestion: Codable, Hashable, Sendable {
+    public var answer: ChatHistoryQuestionAnswer?
     /// Вопрос ИИ
     public var kind: String
     /// Номер предложения, к которому вопрос
@@ -13,15 +14,18 @@ public struct ChatHistoryQuestion: Codable, Hashable, Sendable {
 
     public init(
         text: String,
+        answer: ChatHistoryQuestionAnswer? = nil,
         kind: String = "question",
         proposalID: String? = nil
     ) {
+        self.answer = answer
         self.kind = kind
         self.proposalID = proposalID
         self.text = text
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
+        case answer
         case kind
         case proposalID = "proposal_id"
         case text
@@ -29,6 +33,7 @@ public struct ChatHistoryQuestion: Codable, Hashable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        answer = try container.decodeIfPresent(ChatHistoryQuestionAnswer.self, forKey: .answer)
         kind = try container.decode(String.self, forKey: .kind)
         proposalID = try container.decodeIfPresent(String.self, forKey: .proposalID)
         text = try container.decode(String.self, forKey: .text)
@@ -36,6 +41,7 @@ public struct ChatHistoryQuestion: Codable, Hashable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(answer, forKey: .answer)
         try container.encode(kind, forKey: .kind)
         try container.encodeIfPresent(proposalID, forKey: .proposalID)
         try container.encode(text, forKey: .text)

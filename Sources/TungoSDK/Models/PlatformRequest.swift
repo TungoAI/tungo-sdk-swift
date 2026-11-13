@@ -12,6 +12,8 @@ public struct PlatformRequest: Codable, Hashable, Sendable {
     public var clientRequestID: String?
     /// Компания из адреса (co_…); null — адрес не про компанию
     public var companyID: String?
+    /// Цена запроса в тиынах — сколько списано с баланса платформы за вызовы модели этого запроса (ход ИИ; у хода потоком — когда он закончится). null — запрос модель не вызывал; у запросов до появления этого поля тоже null
+    public var costTiyn: Int64?
     /// Сколько шёл ответ, мс. У хода ИИ — до начала потока событий
     public var durationMs: Int64
     /// id строки журнала (rlg_…)
@@ -34,6 +36,7 @@ public struct PlatformRequest: Codable, Hashable, Sendable {
         at: String,
         clientRequestID: String?,
         companyID: String?,
+        costTiyn: Int64?,
         durationMs: Int64,
         id: String,
         ip: String?,
@@ -47,6 +50,7 @@ public struct PlatformRequest: Codable, Hashable, Sendable {
         self.at = at
         self.clientRequestID = clientRequestID
         self.companyID = companyID
+        self.costTiyn = costTiyn
         self.durationMs = durationMs
         self.id = id
         self.ip = ip
@@ -62,6 +66,7 @@ public struct PlatformRequest: Codable, Hashable, Sendable {
         case at
         case clientRequestID = "client_request_id"
         case companyID = "company_id"
+        case costTiyn = "cost_tiyn"
         case durationMs = "duration_ms"
         case id
         case ip
@@ -78,6 +83,7 @@ public struct PlatformRequest: Codable, Hashable, Sendable {
         at = try container.decode(String.self, forKey: .at)
         clientRequestID = try container.decodeIfPresent(String.self, forKey: .clientRequestID)
         companyID = try container.decodeIfPresent(String.self, forKey: .companyID)
+        costTiyn = try container.decodeIfPresent(Int64.self, forKey: .costTiyn)
         durationMs = try container.decode(Int64.self, forKey: .durationMs)
         id = try container.decode(String.self, forKey: .id)
         ip = try container.decodeIfPresent(String.self, forKey: .ip)
@@ -94,6 +100,7 @@ public struct PlatformRequest: Codable, Hashable, Sendable {
         try container.encode(at, forKey: .at)
         try container.encode(clientRequestID, forKey: .clientRequestID)
         try container.encode(companyID, forKey: .companyID)
+        try container.encode(costTiyn, forKey: .costTiyn)
         try container.encode(durationMs, forKey: .durationMs)
         try container.encode(id, forKey: .id)
         try container.encode(ip, forKey: .ip)

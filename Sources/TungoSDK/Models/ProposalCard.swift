@@ -8,6 +8,7 @@ public struct ProposalCard: Codable, Hashable, Sendable {
     public var actions: [ProposalAction]
     public var advanceOffset: ProposalAdvanceOffset?
     public var approval: ProposalApproval
+    public var approvalRequest: ProposalApprovalRequest
     /// Сколько блокеров: больше 0 — одобрить нельзя, нужен ответ человека в чате
     public var blockerCount: Int64
     /// Блокеры — показать красным: пока они есть, одобрить нельзя. Снимает их ответ человека в чате (ИИ пересоберёт предложение)
@@ -15,7 +16,7 @@ public struct ProposalCard: Codable, Hashable, Sendable {
     public var counterparty: ProposalParty?
     /// Когда ИИ подготовил предложение, ISO 8601 UTC
     public var createdAt: String
-    /// Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из чата (пачка, автоматизация, MCP)
+    /// Разговор чата, в котором ИИ подготовил предложение: «Открыть разговор» — GET …/chat/{dialog_id} (если он ваш). null — не из разговора человека (пачка из ручки, автоматизация, MCP)
     public var dialogID: String?
     /// Номер документа в 1С — есть, когда документ уже записан
     public var documentNumber: String?
@@ -38,11 +39,14 @@ public struct ProposalCard: Codable, Hashable, Sendable {
     public var lineCount: Int64
     /// Строки товаров и услуг; пусто у платёжек, кассовых ордеров и справочников
     public var lines: [ProposalLine]
+    public var origin: ProposalOrigin
     /// Ожидаемые проводки — что получится в учёте после проведения
     public var postings: [ProposalPosting]
     public var result: ProposalResult?
     public var source: ProposalSource
     public var status: ProposalStatus
+    /// Причина отказа — у статусов rejected (отклонено) и failed (записать не удалось): последняя такая запись history. null — статус другой или причину не записали
+    public var statusReason: ProposalCardStatusReason?
     /// Статус по-русски для показа (бейдж)
     public var statusTitle: String
     /// Текстовое превью документа (для чата и логов). Интерфейс рисует карточку по полям выше
@@ -59,6 +63,7 @@ public struct ProposalCard: Codable, Hashable, Sendable {
     public init(
         actions: [ProposalAction],
         approval: ProposalApproval,
+        approvalRequest: ProposalApprovalRequest,
         blockerCount: Int64,
         blockers: [String],
         createdAt: String,
@@ -74,9 +79,11 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         levelTitle: String,
         lineCount: Int64,
         lines: [ProposalLine],
+        origin: ProposalOrigin,
         postings: [ProposalPosting],
         source: ProposalSource,
         status: ProposalStatus,
+        statusReason: ProposalCardStatusReason?,
         statusTitle: String,
         summary: String,
         title: String,
@@ -92,6 +99,7 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         self.actions = actions
         self.advanceOffset = advanceOffset
         self.approval = approval
+        self.approvalRequest = approvalRequest
         self.blockerCount = blockerCount
         self.blockers = blockers
         self.counterparty = counterparty
@@ -109,10 +117,12 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         self.levelTitle = levelTitle
         self.lineCount = lineCount
         self.lines = lines
+        self.origin = origin
         self.postings = postings
         self.result = result
         self.source = source
         self.status = status
+        self.statusReason = statusReason
         self.statusTitle = statusTitle
         self.summary = summary
         self.title = title
@@ -126,6 +136,7 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         case actions
         case advanceOffset = "advance_offset"
         case approval
+        case approvalRequest = "approval_request"
         case blockerCount = "blocker_count"
         case blockers
         case counterparty
@@ -143,10 +154,12 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         case levelTitle = "level_title"
         case lineCount = "line_count"
         case lines
+        case origin
         case postings
         case result
         case source
         case status
+        case statusReason = "status_reason"
         case statusTitle = "status_title"
         case summary
         case title
@@ -161,6 +174,7 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         actions = try container.decode([ProposalAction].self, forKey: .actions)
         advanceOffset = try container.decodeIfPresent(ProposalAdvanceOffset.self, forKey: .advanceOffset)
         approval = try container.decode(ProposalApproval.self, forKey: .approval)
+        approvalRequest = try container.decode(ProposalApprovalRequest.self, forKey: .approvalRequest)
         blockerCount = try container.decode(Int64.self, forKey: .blockerCount)
         blockers = try container.decode([String].self, forKey: .blockers)
         counterparty = try container.decodeIfPresent(ProposalParty.self, forKey: .counterparty)
@@ -178,10 +192,12 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         levelTitle = try container.decode(String.self, forKey: .levelTitle)
         lineCount = try container.decode(Int64.self, forKey: .lineCount)
         lines = try container.decode([ProposalLine].self, forKey: .lines)
+        origin = try container.decode(ProposalOrigin.self, forKey: .origin)
         postings = try container.decode([ProposalPosting].self, forKey: .postings)
         result = try container.decodeIfPresent(ProposalResult.self, forKey: .result)
         source = try container.decode(ProposalSource.self, forKey: .source)
         status = try container.decode(ProposalStatus.self, forKey: .status)
+        statusReason = try container.decodeIfPresent(ProposalCardStatusReason.self, forKey: .statusReason)
         statusTitle = try container.decode(String.self, forKey: .statusTitle)
         summary = try container.decode(String.self, forKey: .summary)
         title = try container.decode(String.self, forKey: .title)
@@ -196,6 +212,7 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         try container.encode(actions, forKey: .actions)
         try container.encodeIfPresent(advanceOffset, forKey: .advanceOffset)
         try container.encode(approval, forKey: .approval)
+        try container.encode(approvalRequest, forKey: .approvalRequest)
         try container.encode(blockerCount, forKey: .blockerCount)
         try container.encode(blockers, forKey: .blockers)
         try container.encodeIfPresent(counterparty, forKey: .counterparty)
@@ -213,10 +230,12 @@ public struct ProposalCard: Codable, Hashable, Sendable {
         try container.encode(levelTitle, forKey: .levelTitle)
         try container.encode(lineCount, forKey: .lineCount)
         try container.encode(lines, forKey: .lines)
+        try container.encode(origin, forKey: .origin)
         try container.encode(postings, forKey: .postings)
         try container.encodeIfPresent(result, forKey: .result)
         try container.encode(source, forKey: .source)
         try container.encode(status, forKey: .status)
+        try container.encode(statusReason, forKey: .statusReason)
         try container.encode(statusTitle, forKey: .statusTitle)
         try container.encode(summary, forKey: .summary)
         try container.encode(title, forKey: .title)

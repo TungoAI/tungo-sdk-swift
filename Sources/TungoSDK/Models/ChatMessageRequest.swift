@@ -12,6 +12,12 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
     ///
     /// `nil` leaves the field out, `.null` sends an explicit null.
     public var dialogID: Nullable<String>?
+    /// Усилие ИИ на этот вопрос: low < medium < high < xhigh < max — глубже думает, дольше и дороже (больше расход лимита). Не прислано или null — усилие выбирает Tungo. Только на тарифе с выбором усилия (max_effort тарифа в GET /v1/plans не null): иначе 402 effort_not_in_plan. Выше max_effort тарифа — опускается до него. Ответ на уточняющий вопрос продолжает ход с прежним усилием. Ключу API тариф не нужен: усилие — как прислано
+    ///
+    /// `nil` leaves the field out, `.null` sends an explicit null.
+    public var effort: Nullable<ChatMessageRequestEffort>?
+    /// Упоминания через «@» в этом вопросе, до 10: ИИ получит их вместе с вопросом. Каждое проверяется на доступ: нет объекта в этой компании или нет права его видеть — 404 (error.code = mention_not_found, error.index — номер в списке), ход не начинается. Неверная форма — 400 (error.code = mentions_invalid)
+    public var mentions: [ChatMention]?
     /// Вопрос человека, до 4000 знаков; можно не писать, если приложены файлы
     public var message: String?
     /// Режим хода: auto (по умолчанию) — ИИ сам решает, ответить или подготовить документ; ask — только ответ и разбор, без документов; document — подготовить документ
@@ -33,6 +39,8 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         attachments: [ChatAttachment]? = nil,
         capabilities: [String]? = nil,
         dialogID: Nullable<String>? = nil,
+        effort: Nullable<ChatMessageRequestEffort>? = nil,
+        mentions: [ChatMention]? = nil,
         message: String? = nil,
         mode: ChatMessageRequestMode? = nil,
         newDialog: Bool? = nil,
@@ -43,6 +51,8 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         self.attachments = attachments
         self.capabilities = capabilities
         self.dialogID = dialogID
+        self.effort = effort
+        self.mentions = mentions
         self.message = message
         self.mode = mode
         self.newDialog = newDialog
@@ -55,6 +65,8 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         case attachments
         case capabilities
         case dialogID = "dialog_id"
+        case effort
+        case mentions
         case message
         case mode
         case newDialog = "new_dialog"
@@ -68,6 +80,8 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         attachments = try container.decodeIfPresent([ChatAttachment].self, forKey: .attachments)
         capabilities = try container.decodeIfPresent([String].self, forKey: .capabilities)
         dialogID = container.contains(.dialogID) ? try container.decode(Nullable<String>.self, forKey: .dialogID) : nil
+        effort = container.contains(.effort) ? try container.decode(Nullable<ChatMessageRequestEffort>.self, forKey: .effort) : nil
+        mentions = try container.decodeIfPresent([ChatMention].self, forKey: .mentions)
         message = try container.decodeIfPresent(String.self, forKey: .message)
         mode = try container.decodeIfPresent(ChatMessageRequestMode.self, forKey: .mode)
         newDialog = try container.decodeIfPresent(Bool.self, forKey: .newDialog)
@@ -81,6 +95,8 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         try container.encodeIfPresent(attachments, forKey: .attachments)
         try container.encodeIfPresent(capabilities, forKey: .capabilities)
         try container.encodeIfPresent(dialogID, forKey: .dialogID)
+        try container.encodeIfPresent(effort, forKey: .effort)
+        try container.encodeIfPresent(mentions, forKey: .mentions)
         try container.encodeIfPresent(message, forKey: .message)
         try container.encodeIfPresent(mode, forKey: .mode)
         try container.encodeIfPresent(newDialog, forKey: .newDialog)

@@ -8,6 +8,8 @@ public struct ProposalHistoryEvent: Codable, Hashable, Sendable {
     public var actor: String
     /// Когда, ISO 8601 UTC
     public var at: String
+    /// Машинная пометка шага, если есть: `approval_requested` — просили одобрить (статус при этом не менялся); `write_unknown`, `rejected_write_unknown`, `revert_unknown` — исход записи в 1С неизвестен
+    public var code: String?
     /// Пояснение: причина отклонения, комментарий к одобрению, текст ошибки записи
     public var note: String?
     public var status: ProposalStatus
@@ -19,10 +21,12 @@ public struct ProposalHistoryEvent: Codable, Hashable, Sendable {
         at: String,
         status: ProposalStatus,
         statusTitle: String,
+        code: String? = nil,
         note: String? = nil
     ) {
         self.actor = actor
         self.at = at
+        self.code = code
         self.note = note
         self.status = status
         self.statusTitle = statusTitle
@@ -31,6 +35,7 @@ public struct ProposalHistoryEvent: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case actor
         case at
+        case code
         case note
         case status
         case statusTitle = "status_title"
@@ -40,6 +45,7 @@ public struct ProposalHistoryEvent: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         actor = try container.decode(String.self, forKey: .actor)
         at = try container.decode(String.self, forKey: .at)
+        code = try container.decodeIfPresent(String.self, forKey: .code)
         note = try container.decodeIfPresent(String.self, forKey: .note)
         status = try container.decode(ProposalStatus.self, forKey: .status)
         statusTitle = try container.decode(String.self, forKey: .statusTitle)
@@ -49,6 +55,7 @@ public struct ProposalHistoryEvent: Codable, Hashable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(actor, forKey: .actor)
         try container.encode(at, forKey: .at)
+        try container.encodeIfPresent(code, forKey: .code)
         try container.encodeIfPresent(note, forKey: .note)
         try container.encode(status, forKey: .status)
         try container.encode(statusTitle, forKey: .statusTitle)

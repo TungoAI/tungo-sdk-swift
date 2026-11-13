@@ -114,17 +114,17 @@ func json(_ text: String) throws -> JSONValue {
 
 /// JSON bodies of valid responses.
 enum Fixture {
-    static let dialogList = #"{"data":[{"id":"d1","message_count":2,"running":false,"title":"T","updated_at":"2026-11-09T15:00:00Z"}],"next_cursor":null}"#
+    static let dialogList = #"{"data":[{"id":"d1","message_count":2,"running":false,"title":"T","title_source":"user","updated_at":"2026-11-09T15:00:00Z"}],"next_cursor":null}"#
     static let tokenCount = #"{"input_cost_tiyn":1,"input_tokens":2,"max_cost_tiyn":9007199254740993,"max_output_tokens":4,"model":"m","added_later":{"x":[1,2]}}"#
     static let decision = #"{"message":"ok","ok":true,"repeated":false}"#
     static let deleted = #"{"deleted":true,"id":"d1"}"#
     static let state = #"{"paused":true,"paused_at":null,"queued":0,"reason":null,"running":0}"#
     static let usageRates = #"{"data":[]}"#
     static let hookAccepted = #"{"accepted":true,"duplicate":false,"event_id":"evt_1","run_ids":["run_1"]}"#
-    static let turn = #"{"answer":"The VAT is 5 400.","citations":[],"dialog_id":"dlg_1","errors":[],"pending_question":null,"proposals":[],"questions":[],"stop_reason":"end_turn","turn_no":3}"#
+    static let turn = #"{"answer":"The VAT is 5 400.","citations":[],"dialog_id":"dlg_1","errors":[],"followups":[],"pending_question":null,"proposals":[],"questions":[],"stop_reason":"end_turn","turn_no":3}"#
 
     static func dialogPage(ids: [String], next: String?) -> String {
-        let items = ids.map { #"{"id":"\#($0)","message_count":1,"running":false,"title":"t","updated_at":"2026-11-09T15:00:00Z"}"# }
+        let items = ids.map { #"{"id":"\#($0)","message_count":1,"running":false,"title":"t","title_source":"user","updated_at":"2026-11-09T15:00:00Z"}"# }
         return #"{"data":[\#(items.joined(separator: ","))],"next_cursor":\#(next.map { "\"\($0)\"" } ?? "null")}"#
     }
 

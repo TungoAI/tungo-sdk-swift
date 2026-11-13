@@ -74,7 +74,7 @@ public struct ChatResource: Sendable {
 
     /// Сообщение ИИ-бухгалтеру (ход потоком SSE)
     ///
-    /// Агентный цикл над 1С компании. Записи в 1С здесь нет: документы попадают в очередь предложений. Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа; 503 — сервис модели не настроен. Повтор с тем же Idempotency-Key: ход закончен — его итог JSON (ChatTurnResult, Idempotent-Replayed: true), ход ещё идёт — 409 idempotency_in_progress с error.dialog_id, error.turn_no и error.events_url для переподключения (Last-Event-ID).
+    /// Агентный цикл над 1С компании. Записи в 1С здесь нет: документы попадают в очередь предложений. Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа (plan_limit_reached) или у человека уже идёт предельное число ходов без доп. использования (parallel_turns_limit, Retry-After; ход не начат); 503 — сервис модели не настроен. Повтор с тем же Idempotency-Key: ход закончен — его итог JSON (ChatTurnResult, Idempotent-Replayed: true), ход ещё идёт — 409 idempotency_in_progress с error.dialog_id, error.turn_no и error.events_url для переподключения (Last-Event-ID).
     ///
     /// Idempotency-Key: повтор с тем же ключом и тем же телом отдаёт прежний ответ (статус и тело) с заголовком Idempotent-Replayed: true и ничего не делает второй раз; тот же ключ с другим адресом или телом — 422 (error.code = idempotency_key_reused); первый запрос с этим ключом ещё идёт — 409 (error.code = idempotency_in_progress). Запоминается только удачный ответ (2xx): после отказа повтор с тем же ключом выполнится заново. Ключ живёт сутки (настройка idempotency.keys), область — организация и тот, кто прислал (ключ API или человек).
     ///
@@ -102,7 +102,7 @@ public struct ChatResource: Sendable {
 
     /// Сообщение ИИ-бухгалтеру (ход потоком SSE)
     ///
-    /// Агентный цикл над 1С компании. Записи в 1С здесь нет: документы попадают в очередь предложений. Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа; 503 — сервис модели не настроен. Повтор с тем же Idempotency-Key: ход закончен — его итог JSON (ChatTurnResult, Idempotent-Replayed: true), ход ещё идёт — 409 idempotency_in_progress с error.dialog_id, error.turn_no и error.events_url для переподключения (Last-Event-ID).
+    /// Агентный цикл над 1С компании. Записи в 1С здесь нет: документы попадают в очередь предложений. Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа (plan_limit_reached) или у человека уже идёт предельное число ходов без доп. использования (parallel_turns_limit, Retry-After; ход не начат); 503 — сервис модели не настроен. Повтор с тем же Idempotency-Key: ход закончен — его итог JSON (ChatTurnResult, Idempotent-Replayed: true), ход ещё идёт — 409 idempotency_in_progress с error.dialog_id, error.turn_no и error.events_url для переподключения (Last-Event-ID).
     ///
     /// Idempotency-Key: повтор с тем же ключом и тем же телом отдаёт прежний ответ (статус и тело) с заголовком Idempotent-Replayed: true и ничего не делает второй раз; тот же ключ с другим адресом или телом — 422 (error.code = idempotency_key_reused); первый запрос с этим ключом ещё идёт — 409 (error.code = idempotency_in_progress). Запоминается только удачный ответ (2xx): после отказа повтор с тем же ключом выполнится заново. Ключ живёт сутки (настройка idempotency.keys), область — организация и тот, кто прислал (ключ API или человек).
     ///
@@ -135,7 +135,7 @@ public struct ChatResource: Sendable {
 
     /// Сообщение ИИ-бухгалтеру (ход потоком SSE)
     ///
-    /// Агентный цикл над 1С компании. Записи в 1С здесь нет: документы попадают в очередь предложений. Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа; 503 — сервис модели не настроен. Повтор с тем же Idempotency-Key: ход закончен — его итог JSON (ChatTurnResult, Idempotent-Replayed: true), ход ещё идёт — 409 idempotency_in_progress с error.dialog_id, error.turn_no и error.events_url для переподключения (Last-Event-ID).
+    /// Агентный цикл над 1С компании. Записи в 1С здесь нет: документы попадают в очередь предложений. Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа (plan_limit_reached) или у человека уже идёт предельное число ходов без доп. использования (parallel_turns_limit, Retry-After; ход не начат); 503 — сервис модели не настроен. Повтор с тем же Idempotency-Key: ход закончен — его итог JSON (ChatTurnResult, Idempotent-Replayed: true), ход ещё идёт — 409 idempotency_in_progress с error.dialog_id, error.turn_no и error.events_url для переподключения (Last-Event-ID).
     ///
     /// Idempotency-Key: повтор с тем же ключом и тем же телом отдаёт прежний ответ (статус и тело) с заголовком Idempotent-Replayed: true и ничего не делает второй раз; тот же ключ с другим адресом или телом — 422 (error.code = idempotency_key_reused); первый запрос с этим ключом ещё идёт — 409 (error.code = idempotency_in_progress). Запоминается только удачный ответ (2xx): после отказа повтор с тем же ключом выполнится заново. Ключ живёт сутки (настройка idempotency.keys), область — организация и тот, кто прислал (ключ API или человек).
     ///
@@ -220,6 +220,124 @@ public struct ChatResource: Sendable {
         return try await core.send(spec, options: options, as: ChatTokenCount.self)
     }
 
+    /// Что можно упомянуть через «@»
+    ///
+    /// Поиск для списка упоминаний в поле ввода. Находит только то, что человек вправе открыть: предложения и задания — по праву company.read (задания — всех авторов компании; по ключу API — только начатые этим ключом), контрагентов — в 1С этой компании. Модель не вызывается.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/chat/mentions` - permission `chat.use`
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - limit: Сколько на каждый вид: 1–20, по умолчанию 8
+    ///   - q: Что ищем: часть номера, названия, имени; у контрагента — от 2 знаков (или БИН цифрами). Пусто — свежие предложения и задания
+    ///   - types: Виды через запятую; по умолчанию все. `proposal` — предложение (документ для 1С), id — его номер P-000123; `counterparty` — контрагент из 1С компании, id — его ссылка из поиска; `batch` — задание пачки (разбор выписки, в…
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The decoded response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func listMentions(
+        companyID: String? = nil,
+        limit: Int? = nil,
+        q: String? = nil,
+        types: String? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> ChatMentionSearch {
+        try await listMentionsWithResponse(companyID: companyID, limit: limit, q: q, types: types, options: options).value
+    }
+
+    /// Что можно упомянуть через «@»
+    ///
+    /// Поиск для списка упоминаний в поле ввода. Находит только то, что человек вправе открыть: предложения и задания — по праву company.read (задания — всех авторов компании; по ключу API — только начатые этим ключом), контрагентов — в 1С этой компании. Модель не вызывается.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/chat/mentions` - permission `chat.use`
+    ///
+    /// The same call as `listMentions`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - limit: Сколько на каждый вид: 1–20, по умолчанию 8
+    ///   - q: Что ищем: часть номера, названия, имени; у контрагента — от 2 знаков (или БИН цифрами). Пусто — свежие предложения и задания
+    ///   - types: Виды через запятую; по умолчанию все. `proposal` — предложение (документ для 1С), id — его номер P-000123; `counterparty` — контрагент из 1С компании, id — его ссылка из поиска; `batch` — задание пачки (разбор выписки, в…
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func listMentionsWithResponse(
+        companyID: String? = nil,
+        limit: Int? = nil,
+        q: String? = nil,
+        types: String? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<ChatMentionSearch> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/mentions"
+        var query = QueryBuilder()
+        query.add("limit", limit)
+        query.add("q", q)
+        query.add("types", types)
+        let spec = RequestSpec(method: "GET", path: path, query: query)
+        return try await core.send(spec, options: options, as: ChatMentionSearch.self)
+    }
+
+    /// Подсказки пустого чата
+    ///
+    /// Что спросить в этой компании сейчас: разделы и карточки с готовыми текстами — кабинет рисует их как есть. Содержимое — настройка платформы, меняется без выката. Набор зависит от того, подключена ли 1С, есть ли документы, ждущие решения, от прав человека и от календаря: сезонные карточки появляются в свои недели сами, годы, кварталы и месяцы в текстах подставлены на сегодня по времени Алматы. Модель не вызывается, расхода нет.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/chat/suggestions` - permission `chat.use`
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - lang: Язык текстов — язык интерфейса кабинета. Не передан — язык ответов ИИ из профиля (`kk` — по-казахски, иначе по-русски)
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The decoded response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func listSuggestions(
+        companyID: String? = nil,
+        lang: ListCompanyChatSuggestionsLang? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> ChatSuggestions {
+        try await listSuggestionsWithResponse(companyID: companyID, lang: lang, options: options).value
+    }
+
+    /// Подсказки пустого чата
+    ///
+    /// Что спросить в этой компании сейчас: разделы и карточки с готовыми текстами — кабинет рисует их как есть. Содержимое — настройка платформы, меняется без выката. Набор зависит от того, подключена ли 1С, есть ли документы, ждущие решения, от прав человека и от календаря: сезонные карточки появляются в свои недели сами, годы, кварталы и месяцы в текстах подставлены на сегодня по времени Алматы. Модель не вызывается, расхода нет.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/chat/suggestions` - permission `chat.use`
+    ///
+    /// The same call as `listSuggestions`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - lang: Язык текстов — язык интерфейса кабинета. Не передан — язык ответов ИИ из профиля (`kk` — по-казахски, иначе по-русски)
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func listSuggestionsWithResponse(
+        companyID: String? = nil,
+        lang: ListCompanyChatSuggestionsLang? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<ChatSuggestions> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/suggestions"
+        var query = QueryBuilder()
+        query.add("lang", lang)
+        let spec = RequestSpec(method: "GET", path: path, query: query)
+        return try await core.send(spec, options: options, as: ChatSuggestions.self)
+    }
+
     /// Разговор целиком
     ///
     /// Та же форма сообщений, что клиент собирает из живого потока. От идущего хода — вопрос последним сообщением с pending: true.
@@ -270,7 +388,7 @@ public struct ChatResource: Sendable {
 
     /// Переименовать свой разговор
     ///
-    /// Название видно в списке разговоров и в карточке разговора. Пустая строка — вернуть заголовок по первому вопросу. Пока ход идёт на другом сервере Tungo — 409 turn_in_progress (повторить после ответа); разговор только что изменился — 409 dialog_changed.
+    /// Название видно в списке разговоров и в карточке разговора. Пустая строка — вернуть автоматическое название (от ИИ, а пока его нет — первый вопрос). Пока ход идёт на другом сервере Tungo — 409 turn_in_progress (повторить после ответа); разговор только что изменился — 409 dialog_changed.
     ///
     /// Доступ: chat.use.
     ///
@@ -296,7 +414,7 @@ public struct ChatResource: Sendable {
 
     /// Переименовать свой разговор
     ///
-    /// Название видно в списке разговоров и в карточке разговора. Пустая строка — вернуть заголовок по первому вопросу. Пока ход идёт на другом сервере Tungo — 409 turn_in_progress (повторить после ответа); разговор только что изменился — 409 dialog_changed.
+    /// Название видно в списке разговоров и в карточке разговора. Пустая строка — вернуть автоматическое название (от ИИ, а пока его нет — первый вопрос). Пока ход идёт на другом сервере Tungo — 409 turn_in_progress (повторить после ответа); разговор только что изменился — 409 dialog_changed.
     ///
     /// Доступ: chat.use.
     ///
@@ -375,7 +493,7 @@ public struct ChatResource: Sendable {
 
     /// Ответ на уточняющий вопрос ИИ (событие choice)
     ///
-    /// Продолжает ход потоком SSE. Повторный ответ на тот же choice_id — 409 (error.turn — номер хода с ответом; error.code = dismissed — вопрос закрыт без ответа). Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа; 503 — сервис модели не настроен.
+    /// Продолжает ход потоком SSE. Повторный ответ на тот же choice_id — 409 (error.turn — номер хода с ответом; error.code = dismissed — вопрос закрыт без ответа). Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа (plan_limit_reached) или у человека уже идёт предельное число ходов без доп. использования (parallel_turns_limit, Retry-After; ход не начат); 503 — сервис модели не настроен.
     ///
     /// Доступ: chat.use.
     ///
@@ -403,7 +521,7 @@ public struct ChatResource: Sendable {
 
     /// Ответ на уточняющий вопрос ИИ (событие choice)
     ///
-    /// Продолжает ход потоком SSE. Повторный ответ на тот же choice_id — 409 (error.turn — номер хода с ответом; error.code = dismissed — вопрос закрыт без ответа). Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа; 503 — сервис модели не настроен.
+    /// Продолжает ход потоком SSE. Повторный ответ на тот же choice_id — 409 (error.turn — номер хода с ответом; error.code = dismissed — вопрос закрыт без ответа). Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа (plan_limit_reached) или у человека уже идёт предельное число ходов без доп. использования (parallel_turns_limit, Retry-After; ход не начат); 503 — сервис модели не настроен.
     ///
     /// Доступ: chat.use.
     ///
@@ -436,7 +554,7 @@ public struct ChatResource: Sendable {
 
     /// Ответ на уточняющий вопрос ИИ (событие choice)
     ///
-    /// Продолжает ход потоком SSE. Повторный ответ на тот же choice_id — 409 (error.turn — номер хода с ответом; error.code = dismissed — вопрос закрыт без ответа). Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа; 503 — сервис модели не настроен.
+    /// Продолжает ход потоком SSE. Повторный ответ на тот же choice_id — 409 (error.turn — номер хода с ответом; error.code = dismissed — вопрос закрыт без ответа). Отказы: 402 — ИИ компании не подключён (не оплачено подключение); 409 — идёт предыдущий ход или разговор закрыт (error.code = dialog_closed); 410 — разговор не найден или истёк, начните новый; 429 — кончился лимит тарифа (plan_limit_reached) или у человека уже идёт предельное число ходов без доп. использования (parallel_turns_limit, Retry-After; ход не начат); 503 — сервис модели не настроен.
     ///
     /// Доступ: chat.use.
     ///

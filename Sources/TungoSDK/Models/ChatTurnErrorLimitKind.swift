@@ -2,21 +2,39 @@
 
 import Foundation
 
-/// Только у code = budget: day — дневной лимит, dialog — лимит разговора
+/// Только у code = budget — почему ход остановлен:
+/// - `day` — дневной лимит человека исчерпан — продолжить завтра (по Алматы) или поднять лимит
+/// - `dialog` — лимит разговора исчерпан — начать новый разговор
+/// - `turn` — потолок расхода на один вопрос — уточнить или разбить вопрос
+/// - `plan` — лимит тарифа или доп. использования организации — ждать обновления лимита или поднять его в настройках оплаты
+/// - `disabled` — ИИ временно выключен на платформе — повторить позже
+/// - `meter` — расход не удалось проверить или записать — ход остановлен, чтобы не тратить вслепую; повторить позже
 public enum ChatTurnErrorLimitKind: TungoEnum {
     /// `day`
     case day
     /// `dialog`
     case dialog
+    /// `turn`
+    case turn
+    /// `plan`
+    case plan
+    /// `disabled`
+    case disabled
+    /// `meter`
+    case meter
     /// A value this version of the SDK does not know.
     case unknown(String)
 
-    public static let knownCases: [ChatTurnErrorLimitKind] = [.day, .dialog]
+    public static let knownCases: [ChatTurnErrorLimitKind] = [.day, .dialog, .turn, .plan, .disabled, .meter]
 
     public init(rawValue: String) {
         switch rawValue {
         case "day": self = .day
         case "dialog": self = .dialog
+        case "turn": self = .turn
+        case "plan": self = .plan
+        case "disabled": self = .disabled
+        case "meter": self = .meter
         default: self = .unknown(rawValue)
         }
     }
@@ -25,6 +43,10 @@ public enum ChatTurnErrorLimitKind: TungoEnum {
         switch self {
         case .day: return "day"
         case .dialog: return "dialog"
+        case .turn: return "turn"
+        case .plan: return "plan"
+        case .disabled: return "disabled"
+        case .meter: return "meter"
         case .unknown(let value): return value
         }
     }

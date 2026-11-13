@@ -31,8 +31,12 @@ public enum ChatEvent: Codable, Hashable, Sendable {
     case batch(ChatEventBatch)
     /// `type: "batch_report"`
     case batchReport(ChatEventBatchReport)
+    /// `type: "next"`
+    case next(ChatEventNext)
     /// `type: "done"`
     case done(ChatEventDone)
+    /// `type: "title"`
+    case title(ChatEventTitle)
     /// A variant this version of the SDK does not know, with its raw JSON.
     case unknown(JSONValue)
 
@@ -98,9 +102,19 @@ public enum ChatEvent: Codable, Hashable, Sendable {
                 self = .batchReport(value)
                 return
             }
+        case "next":
+            if let value = try? ChatEventNext(from: decoder) {
+                self = .next(value)
+                return
+            }
         case "done":
             if let value = try? ChatEventDone(from: decoder) {
                 self = .done(value)
+                return
+            }
+        case "title":
+            if let value = try? ChatEventTitle(from: decoder) {
+                self = .title(value)
                 return
             }
         default: break
@@ -123,7 +137,9 @@ public enum ChatEvent: Codable, Hashable, Sendable {
         case .error(let value): try value.encode(to: encoder)
         case .batch(let value): try value.encode(to: encoder)
         case .batchReport(let value): try value.encode(to: encoder)
+        case .next(let value): try value.encode(to: encoder)
         case .done(let value): try value.encode(to: encoder)
+        case .title(let value): try value.encode(to: encoder)
         case .unknown(let value): try value.encode(to: encoder)
         }
     }
@@ -143,7 +159,9 @@ public enum ChatEvent: Codable, Hashable, Sendable {
         case .error: return "error"
         case .batch: return "batch"
         case .batchReport: return "batch_report"
+        case .next: return "next"
         case .done: return "done"
+        case .title: return "title"
         case .unknown(let value): return value["type"]?.stringValue
         }
     }

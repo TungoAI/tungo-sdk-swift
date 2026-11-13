@@ -8,7 +8,7 @@ import FoundationNetworking
 /// The version of the SDK.
 public enum TungoSDKInfo {
     /// The version of this package (also sent in the `User-Agent` header).
-    public static let version = "0.2.0" // x-release-version
+    public static let version = "0.3.0" // x-release-version
     /// The value of the `User-Agent` header.
     public static let userAgent = "tungo-sdk-swift/" + version
     /// The production API host used when no base URL is configured.
