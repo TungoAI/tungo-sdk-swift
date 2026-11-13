@@ -117,7 +117,8 @@ extension TungoTransport {
 /// same code path on Apple platforms and on Linux. Redirects are not followed.
 /// Connections are pooled and reused by the session.
 public final class URLSessionTransport: TungoTransport, @unchecked Sendable {
-    private let session: URLSession
+    /// Internal so that the tests can check the configuration of the session.
+    let session: URLSession
     private let delegate: SessionDelegate
     private let stateLock = NSLock()
     private var closed = false
@@ -127,13 +128,19 @@ public final class URLSessionTransport: TungoTransport, @unchecked Sendable {
     /// - Parameter configuration: The session configuration to copy: proxies,
     ///   TLS settings, `protocolClasses`, additional headers, cellular access
     ///   and so on. The SDK applies its own timeouts, so the timeout intervals
-    ///   of its copy are replaced; the object passed in is left as it is.
+    ///   of its copy are replaced, and its copy has no `urlCache`: responses
+    ///   hold accounting data and requests the API key, so nothing is written
+    ///   to a disk cache. The object passed in is left as it is.
     public init(configuration: URLSessionConfiguration = .default) {
         let delegate = SessionDelegate()
         // A copy: the caller may use the same configuration for sessions of their own.
         let own = (configuration.copy() as? URLSessionConfiguration) ?? configuration
         // The SDK enforces its own idle timeout and total timeout; the session must not cut requests short.
         own.timeoutIntervalForRequest = URLSessionTransport.sessionTimeout
+        // Responses hold accounting data and requests the key header: they must never reach the
+        // disk cache (the shared URLCache of .default writes Library/Caches/<bundle>/Cache.db).
+        own.urlCache = nil
+        own.requestCachePolicy = .reloadIgnoringLocalCacheData
         self.delegate = delegate
         self.session = URLSession(configuration: own, delegate: delegate, delegateQueue: nil)
     }
@@ -354,9 +361,11 @@ private final class Exchange: @unchecked Sendable {
 #if canImport(FoundationNetworking)
 private typealias ResponseDispositionHandler = (URLSession.ResponseDisposition) -> Void
 private typealias RedirectHandler = (URLRequest?) -> Void
+private typealias CacheHandler = (CachedURLResponse?) -> Void
 #else
 private typealias ResponseDispositionHandler = @Sendable (URLSession.ResponseDisposition) -> Void
 private typealias RedirectHandler = @Sendable (URLRequest?) -> Void
+private typealias CacheHandler = @Sendable (CachedURLResponse?) -> Void
 #endif
 
 private final class SessionDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
@@ -402,6 +411,14 @@ private final class SessionDelegate: NSObject, URLSessionDataDelegate, @unchecke
         newRequest request: URLRequest, completionHandler: @escaping RedirectHandler
     ) {
         // Never follow redirects: the request carries credentials.
+        completionHandler(nil)
+    }
+
+    func urlSession(
+        _ session: URLSession, dataTask: URLSessionDataTask, willCacheResponse proposedResponse: CachedURLResponse,
+        completionHandler: @escaping CacheHandler
+    ) {
+        // Never store a response, not even in a cache that a custom URLProtocol brings along.
         completionHandler(nil)
     }
 }

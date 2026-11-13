@@ -95,6 +95,14 @@ final class RequestTests: MockTestCase {
         XCTAssertEqual(configuration.timeoutIntervalForResource, 456)
     }
 
+    func testTheSessionNeverCachesResponses() {
+        // .default brings the shared, disk-backed URLCache; responses with accounting data must not reach it.
+        let transport = URLSessionTransport(configuration: .default)
+        defer { transport.close() }
+        XCTAssertNil(transport.session.configuration.urlCache)
+        XCTAssertEqual(transport.session.configuration.requestCachePolicy, .reloadIgnoringLocalCacheData)
+    }
+
     func testDefaultBaseURL() {
         let client = TungoClient(apiKey: "k", environment: [:])
         defer { client.close() }
