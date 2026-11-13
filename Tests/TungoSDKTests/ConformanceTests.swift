@@ -67,6 +67,20 @@ final class ConformanceTests: XCTestCase {
         }
     }
 
+    func testNonFiniteToleranceIsInvalid() throws {
+        // JSON cannot hold infinity, so this case lives here instead of in the vectors: an
+        // infinite tolerance would turn the replay check off, which must be impossible.
+        let item = try XCTUnwrap(try cases("webhook_verification", "cases").first { $0["expect"]?["valid"] == true })
+        for tolerance in [TimeInterval.infinity, TimeInterval.nan] {
+            XCTAssertThrowsError(try TungoWebhooks.verify(
+                body: try XCTUnwrap(item["body"]?.stringValue), headers: stringMap(item["headers"]),
+                secret: try XCTUnwrap(item["secret"]?.stringValue), tolerance: tolerance,
+                now: Date(timeIntervalSince1970: 1e12))) { error in
+                XCTAssertEqual((error as? WebhookVerificationError)?.reason, .invalidTolerance)
+            }
+        }
+    }
+
     func testHookSignature() throws {
         for item in try cases("hook_signature", "sign") {
             let body = try bytes(item, "body_base64")

@@ -22,7 +22,8 @@ public enum TungoWebhooks {
     ///   - body: The raw request body, exactly as received.
     ///   - headers: The request headers.
     ///   - secret: The signing secret of the endpoint (`whsec_...`).
-    ///   - tolerance: The allowed distance between the message timestamp and `now`, in seconds. Must be positive.
+    ///   - tolerance: The allowed distance between the message timestamp and `now`, in seconds. Must be positive
+    ///     and finite: infinity would disable the replay check, so it is `invalidTolerance`.
     ///   - now: The clock to compare with; the system clock by default.
     /// - Returns: The typed event. An authentic event of a type or shape this SDK version does not
     ///   know is returned as `unknown` with its raw JSON.
@@ -31,7 +32,7 @@ public enum TungoWebhooks {
         body: Data, headers: [String: String], secret: String,
         tolerance: TimeInterval = defaultTolerance, now: Date = Date()
     ) throws -> WebhookEvent {
-        guard tolerance > 0, !tolerance.isNaN else {
+        guard tolerance > 0, tolerance.isFinite else {
             throw WebhookVerificationError(reason: .invalidTolerance)
         }
         let encodedKey = secret.hasPrefix("whsec_") ? String(secret.dropFirst(6)) : secret
