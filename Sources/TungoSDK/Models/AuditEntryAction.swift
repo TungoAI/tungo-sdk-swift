@@ -58,6 +58,16 @@ import Foundation
 /// - `team.seats_reduced` — Сокращено число мест с продления
 /// - `admin.workspace.kind_changed` — Администратор платформы сменил вид организации
 /// - `admin.workspace.contract_seats` — Администратор платформы задал места по договору
+/// - `admin.plan_grant.created` — Платформа выдала организации тариф бесплатно до даты
+/// - `admin.plan_grant.extended` — Платформа продлила выданный тариф
+/// - `admin.plan_grant.revoked` — Платформа отозвала выданный тариф досрочно
+/// - `admin.plan_grant.ended` — Срок выданного тарифа закончился
+/// - `admin.platform_discount.created` — Платформа дала скидку на расход платформы разработчиков
+/// - `admin.platform_discount.revoked` — Платформа отозвала скидку на расход платформы разработчиков
+/// - `admin.subscription.cancelled` — Администратор платформы отменил продление подписки
+/// - `admin.subscription.resumed` — Администратор платформы вернул продление подписки
+/// - `admin.money.exported` — Администратор платформы выгрузил список в CSV
+/// - `admin.payment_search.pd_viewed` — Поддержка открыла реквизиты плательщиков в поиске платежей
 /// - `workspace.sso_provider_created` — SSO: подключён сервер входа
 /// - `workspace.group_created` — Группа создана
 /// - `workspace.group_updated` — Группа изменена
@@ -121,6 +131,9 @@ import Foundation
 /// - `account.deletion_scheduled` — Аккаунт помечен к удалению
 /// - `account.deletion_cancelled` — Удаление аккаунта отменено
 /// - `account.deleted` — Аккаунт удалён и обезличен
+/// - `langfuse.traces_purged` — Трассы ИИ удалены из Langfuse: по сроку хранения, с аккаунтом или после отзыва согласия
+/// - `admin.dialog.langfuse_dataset` — Ход разговора отправлен в набор Langfuse (платформа)
+/// - `admin.dialog.langfuse_annotation` — Ход разговора отправлен в очередь разметки Langfuse (платформа)
 /// - `account.email_code_sent` — Запрошен код подтверждения почты (аккаунт Telegram)
 /// - `account.email_bound` — Почта привязана к аккаунту Telegram
 /// - `account.telegram_merged` — Telegram привязан к аккаунту с подтверждённой почтой, аккаунт Telegram закрыт
@@ -153,6 +166,7 @@ import Foundation
 /// - `admin.setting.changed` — Настройка платформы изменена
 /// - `admin.logs.purged` — Журнал запросов и итогов ходов ИИ убран вручную (платформа)
 /// - `admin.dialog.pd_viewed` — Поддержка открыла разговор с персональными данными
+/// - `admin.dialog.rating_comments_viewed` — Поддержка открыла комментарии человека к оценкам разговора
 /// - `admin.dialog.label_set` — Оценка ответа для обучения поставлена или заменена (платформа)
 /// - `admin.dialog.label_removed` — Оценка ответа для обучения удалена (платформа)
 /// - `admin.journal.pd_viewed` — Поддержка открыла журнал ИИ-бухгалтера с персональными данными
@@ -164,6 +178,18 @@ import Foundation
 /// - `site.post_deleted` — Черновик статьи блога удалён (платформа)
 /// - `site.legal_published` — Опубликована новая редакция документа сайта (платформа)
 /// - `site.trackers_saved` — Изменены счётчики и коды подтверждения сайта (платформа)
+/// - `help.section_created` — Центр помощи: раздел заведён (платформа)
+/// - `help.section_updated` — Центр помощи: раздел изменён (платформа)
+/// - `help.section_deleted` — Центр помощи: раздел удалён (платформа)
+/// - `help.article_created` — Центр помощи: статья заведена (платформа)
+/// - `help.article_updated` — Центр помощи: статья изменена, опубликована или скрыта (платформа)
+/// - `help.article_deleted` — Центр помощи: статья удалена (платформа)
+/// - `help.reordered` — Центр помощи: порядок разделов или статей изменён (платформа)
+/// - `support.ticket_created` — Создано обращение в поддержку
+/// - `admin.support.replied` — Поддержка ответила на обращение
+/// - `admin.support.note_added` — Поддержка добавила внутреннюю заметку к обращению
+/// - `admin.support.ticket_updated` — Поддержка изменила обращение: состояние, категорию, приоритет или исполнителя
+/// - `admin.support.attachment_viewed` — Поддержка скачала вложение обращения
 /// - `canary.triggered` — Сработала приманка: украденный ключ или почта «сотрудника» (платформа)
 /// - `billing.payment.new` — Платёж: создан
 /// - `billing.payment.pending` — Платёж: отправлен в банк
@@ -286,6 +312,26 @@ public enum AuditEntryAction: TungoEnum {
     case adminWorkspaceKindChanged
     /// `admin.workspace.contract_seats`
     case adminWorkspaceContractSeats
+    /// `admin.plan_grant.created`
+    case adminPlanGrantCreated
+    /// `admin.plan_grant.extended`
+    case adminPlanGrantExtended
+    /// `admin.plan_grant.revoked`
+    case adminPlanGrantRevoked
+    /// `admin.plan_grant.ended`
+    case adminPlanGrantEnded
+    /// `admin.platform_discount.created`
+    case adminPlatformDiscountCreated
+    /// `admin.platform_discount.revoked`
+    case adminPlatformDiscountRevoked
+    /// `admin.subscription.cancelled`
+    case adminSubscriptionCancelled
+    /// `admin.subscription.resumed`
+    case adminSubscriptionResumed
+    /// `admin.money.exported`
+    case adminMoneyExported
+    /// `admin.payment_search.pd_viewed`
+    case adminPaymentSearchPdViewed
     /// `workspace.sso_provider_created`
     case workspaceSsoProviderCreated
     /// `workspace.group_created`
@@ -412,6 +458,12 @@ public enum AuditEntryAction: TungoEnum {
     case accountDeletionCancelled
     /// `account.deleted`
     case accountDeleted
+    /// `langfuse.traces_purged`
+    case langfuseTracesPurged
+    /// `admin.dialog.langfuse_dataset`
+    case adminDialogLangfuseDataset
+    /// `admin.dialog.langfuse_annotation`
+    case adminDialogLangfuseAnnotation
     /// `account.email_code_sent`
     case accountEmailCodeSent
     /// `account.email_bound`
@@ -476,6 +528,8 @@ public enum AuditEntryAction: TungoEnum {
     case adminLogsPurged
     /// `admin.dialog.pd_viewed`
     case adminDialogPdViewed
+    /// `admin.dialog.rating_comments_viewed`
+    case adminDialogRatingCommentsViewed
     /// `admin.dialog.label_set`
     case adminDialogLabelSet
     /// `admin.dialog.label_removed`
@@ -498,6 +552,30 @@ public enum AuditEntryAction: TungoEnum {
     case siteLegalPublished
     /// `site.trackers_saved`
     case siteTrackersSaved
+    /// `help.section_created`
+    case helpSectionCreated
+    /// `help.section_updated`
+    case helpSectionUpdated
+    /// `help.section_deleted`
+    case helpSectionDeleted
+    /// `help.article_created`
+    case helpArticleCreated
+    /// `help.article_updated`
+    case helpArticleUpdated
+    /// `help.article_deleted`
+    case helpArticleDeleted
+    /// `help.reordered`
+    case helpReordered
+    /// `support.ticket_created`
+    case supportTicketCreated
+    /// `admin.support.replied`
+    case adminSupportReplied
+    /// `admin.support.note_added`
+    case adminSupportNoteAdded
+    /// `admin.support.ticket_updated`
+    case adminSupportTicketUpdated
+    /// `admin.support.attachment_viewed`
+    case adminSupportAttachmentViewed
     /// `canary.triggered`
     case canaryTriggered
     /// `billing.payment.new`
@@ -523,7 +601,7 @@ public enum AuditEntryAction: TungoEnum {
     /// A value this version of the SDK does not know.
     case unknown(String)
 
-    public static let knownCases: [AuditEntryAction] = [.companyCreated, .companyUpdated, .companyArchived, .companyUnarchived, .companyMemberAdded, .companyMemberRoleChanged, .companyMemberRemoved, .companyOnboardingWaived, .companyOnboardingUnwaived, .companyOnecConnected, .companyOnecUpdated, .companyOnecCopyUploaded, .companyOnecCopyHeld, .companyOnecConnectorCodeCreated, .companyOnecConnectorPaired, .companyOnecConnectorRotated, .companyOnecConnectorRotateRefused, .companyOnecConnectorRevoked, .companyOnecConnectorLinkApproved, .connectorLinkCreated, .connectorLinkDenied, .companyOnecLinkApproved, .companyOnecLinkRevoked, .onecLinkWrongMatch, .companyProfileRebuild, .workspaceMemberJoined, .workspaceMemberRoleChanged, .workspaceMemberRemoved, .workspaceMemberAccessRevoked, .workspaceInvitationCreated, .workspaceInvitationCancelled, .workspacePoliciesUpdated, .workspaceScimTokenCreated, .workspaceScimTokenRevoked, .workspaceScimUserProvisioned, .workspaceScimUserDeprovisioned, .workspaceScimUserDeleted, .workspaceUpdated, .workspaceSsoProviderUpdated, .workspaceSsoProviderDeleted, .workspaceSsoDomainVerificationRequested, .workspaceSsoDomainVerified, .workspaceOwnershipTransferred, .workspaceDeleted, .workspaceCreated, .teamCheckoutAbandoned, .enterpriseRequestCreated, .workspaceConvertedToTeam, .workspaceDeletionScheduled, .workspaceDeletionCancelled, .workspaceInvitationResent, .teamSeatsPurchased, .teamSeatsReduced, .adminWorkspaceKindChanged, .adminWorkspaceContractSeats, .workspaceSsoProviderCreated, .workspaceGroupCreated, .workspaceGroupUpdated, .workspaceGroupDeleted, .workspaceGroupMemberAdded, .workspaceGroupMemberRemoved, .workspaceGroupRolesChanged, .workspaceCustomRoleCreated, .workspaceCustomRoleUpdated, .workspaceCustomRoleDeleted, .workspaceRoleCeilingUpdated, .workspaceModelPolicyUpdated, .workspaceRetentionUpdated, .workspaceTrainingConsent, .workspaceAuditExported, .workspaceComplianceUpdated, .workspaceComplianceRead, .apiKeyCreated, .apiKeyUpdated, .apiKeyRolled, .apiKeyRevoked, .apiKeyTransferred, .apiKeyDisabled, .apiKeyEnabled, .webhookEndpointCreated, .webhookEndpointUpdated, .webhookEndpointDeleted, .webhookSecretRotated, .webhookSecretRead, .webhookMessageResent, .companyAutonomyChanged, .automationPaused, .automationResumed, .automationRunCancel, .billingProfileUpdated, .billingPaymentMethodDisabled, .billingRefundSucceeded, .billingManualCharge, .subscriptionCreated, .subscriptionChanged, .subscriptionCancelScheduled, .subscriptionResumed, .extraUsageConfigured, .extraUsageAdjusted, .platformConfigured, .platformAdjusted, .extraUsageMemberCapSet, .extraUsageAlertThresholdsSet, .companySpendCapSet, .teamAnalyticsExported, .teamSpendExported, .aiBudgetMemberSet, .aiBudgetMemberReset, .spendCapThresholdReached, .spendCompanyCapReached, .planCreated, .planUpdated, .usageRateAdded, .userTermsAccepted, .accountDeletionCodeSent, .accountDeletionScheduled, .accountDeletionCancelled, .accountDeleted, .accountEmailCodeSent, .accountEmailBound, .accountTelegramMerged, .accountGoogleLinked, .accountTelegramMergeRefused, .adminAdsConversionsReleased, .adminAdsConversionsRejected, .adminAdsSignupsExported, .adminAccessSignedIn, .adminAccessRefused, .adminTwoFactorVerified, .adminTwoFactorEnableRequested, .adminTwoFactorEnabled, .adminTwoFactorDisabled, .adminSessionSignedIn, .adminUserBanned, .adminUserUnbanned, .adminWorkspaceBlocked, .adminWorkspaceUnblocked, .adminWorkspaceTrainingConsent, .adminUserPlatformRolesChanged, .adminUserFreeEligibilityChanged, .adminUserLimitResetsGranted, .adminUserLimitResetsRevoked, .usageLimitResetApplied, .referralClaimed, .referralRewarded, .adminEnterpriseRequestStatusChanged, .adminTrainingExported, .adminSettingChanged, .adminLogsPurged, .adminDialogPdViewed, .adminDialogLabelSet, .adminDialogLabelRemoved, .adminJournalPdViewed, .adminCompanyPdViewed, .adminCompanyPdSearched, .adminPaymentPdViewed, .sitePostPublished, .sitePostUnpublished, .sitePostDeleted, .siteLegalPublished, .siteTrackersSaved, .canaryTriggered, .billingPaymentNew, .billingPaymentPending, .billingPaymentRequiresAction, .billingPaymentAuthorized, .billingPaymentSucceeded, .billingPaymentVerified, .billingPaymentFailed, .billingPaymentCancelled, .billingPaymentPartiallyRefunded, .billingPaymentRefunded]
+    public static let knownCases: [AuditEntryAction] = [.companyCreated, .companyUpdated, .companyArchived, .companyUnarchived, .companyMemberAdded, .companyMemberRoleChanged, .companyMemberRemoved, .companyOnboardingWaived, .companyOnboardingUnwaived, .companyOnecConnected, .companyOnecUpdated, .companyOnecCopyUploaded, .companyOnecCopyHeld, .companyOnecConnectorCodeCreated, .companyOnecConnectorPaired, .companyOnecConnectorRotated, .companyOnecConnectorRotateRefused, .companyOnecConnectorRevoked, .companyOnecConnectorLinkApproved, .connectorLinkCreated, .connectorLinkDenied, .companyOnecLinkApproved, .companyOnecLinkRevoked, .onecLinkWrongMatch, .companyProfileRebuild, .workspaceMemberJoined, .workspaceMemberRoleChanged, .workspaceMemberRemoved, .workspaceMemberAccessRevoked, .workspaceInvitationCreated, .workspaceInvitationCancelled, .workspacePoliciesUpdated, .workspaceScimTokenCreated, .workspaceScimTokenRevoked, .workspaceScimUserProvisioned, .workspaceScimUserDeprovisioned, .workspaceScimUserDeleted, .workspaceUpdated, .workspaceSsoProviderUpdated, .workspaceSsoProviderDeleted, .workspaceSsoDomainVerificationRequested, .workspaceSsoDomainVerified, .workspaceOwnershipTransferred, .workspaceDeleted, .workspaceCreated, .teamCheckoutAbandoned, .enterpriseRequestCreated, .workspaceConvertedToTeam, .workspaceDeletionScheduled, .workspaceDeletionCancelled, .workspaceInvitationResent, .teamSeatsPurchased, .teamSeatsReduced, .adminWorkspaceKindChanged, .adminWorkspaceContractSeats, .adminPlanGrantCreated, .adminPlanGrantExtended, .adminPlanGrantRevoked, .adminPlanGrantEnded, .adminPlatformDiscountCreated, .adminPlatformDiscountRevoked, .adminSubscriptionCancelled, .adminSubscriptionResumed, .adminMoneyExported, .adminPaymentSearchPdViewed, .workspaceSsoProviderCreated, .workspaceGroupCreated, .workspaceGroupUpdated, .workspaceGroupDeleted, .workspaceGroupMemberAdded, .workspaceGroupMemberRemoved, .workspaceGroupRolesChanged, .workspaceCustomRoleCreated, .workspaceCustomRoleUpdated, .workspaceCustomRoleDeleted, .workspaceRoleCeilingUpdated, .workspaceModelPolicyUpdated, .workspaceRetentionUpdated, .workspaceTrainingConsent, .workspaceAuditExported, .workspaceComplianceUpdated, .workspaceComplianceRead, .apiKeyCreated, .apiKeyUpdated, .apiKeyRolled, .apiKeyRevoked, .apiKeyTransferred, .apiKeyDisabled, .apiKeyEnabled, .webhookEndpointCreated, .webhookEndpointUpdated, .webhookEndpointDeleted, .webhookSecretRotated, .webhookSecretRead, .webhookMessageResent, .companyAutonomyChanged, .automationPaused, .automationResumed, .automationRunCancel, .billingProfileUpdated, .billingPaymentMethodDisabled, .billingRefundSucceeded, .billingManualCharge, .subscriptionCreated, .subscriptionChanged, .subscriptionCancelScheduled, .subscriptionResumed, .extraUsageConfigured, .extraUsageAdjusted, .platformConfigured, .platformAdjusted, .extraUsageMemberCapSet, .extraUsageAlertThresholdsSet, .companySpendCapSet, .teamAnalyticsExported, .teamSpendExported, .aiBudgetMemberSet, .aiBudgetMemberReset, .spendCapThresholdReached, .spendCompanyCapReached, .planCreated, .planUpdated, .usageRateAdded, .userTermsAccepted, .accountDeletionCodeSent, .accountDeletionScheduled, .accountDeletionCancelled, .accountDeleted, .langfuseTracesPurged, .adminDialogLangfuseDataset, .adminDialogLangfuseAnnotation, .accountEmailCodeSent, .accountEmailBound, .accountTelegramMerged, .accountGoogleLinked, .accountTelegramMergeRefused, .adminAdsConversionsReleased, .adminAdsConversionsRejected, .adminAdsSignupsExported, .adminAccessSignedIn, .adminAccessRefused, .adminTwoFactorVerified, .adminTwoFactorEnableRequested, .adminTwoFactorEnabled, .adminTwoFactorDisabled, .adminSessionSignedIn, .adminUserBanned, .adminUserUnbanned, .adminWorkspaceBlocked, .adminWorkspaceUnblocked, .adminWorkspaceTrainingConsent, .adminUserPlatformRolesChanged, .adminUserFreeEligibilityChanged, .adminUserLimitResetsGranted, .adminUserLimitResetsRevoked, .usageLimitResetApplied, .referralClaimed, .referralRewarded, .adminEnterpriseRequestStatusChanged, .adminTrainingExported, .adminSettingChanged, .adminLogsPurged, .adminDialogPdViewed, .adminDialogRatingCommentsViewed, .adminDialogLabelSet, .adminDialogLabelRemoved, .adminJournalPdViewed, .adminCompanyPdViewed, .adminCompanyPdSearched, .adminPaymentPdViewed, .sitePostPublished, .sitePostUnpublished, .sitePostDeleted, .siteLegalPublished, .siteTrackersSaved, .helpSectionCreated, .helpSectionUpdated, .helpSectionDeleted, .helpArticleCreated, .helpArticleUpdated, .helpArticleDeleted, .helpReordered, .supportTicketCreated, .adminSupportReplied, .adminSupportNoteAdded, .adminSupportTicketUpdated, .adminSupportAttachmentViewed, .canaryTriggered, .billingPaymentNew, .billingPaymentPending, .billingPaymentRequiresAction, .billingPaymentAuthorized, .billingPaymentSucceeded, .billingPaymentVerified, .billingPaymentFailed, .billingPaymentCancelled, .billingPaymentPartiallyRefunded, .billingPaymentRefunded]
 
     public init(rawValue: String) {
         switch rawValue {
@@ -582,6 +660,16 @@ public enum AuditEntryAction: TungoEnum {
         case "team.seats_reduced": self = .teamSeatsReduced
         case "admin.workspace.kind_changed": self = .adminWorkspaceKindChanged
         case "admin.workspace.contract_seats": self = .adminWorkspaceContractSeats
+        case "admin.plan_grant.created": self = .adminPlanGrantCreated
+        case "admin.plan_grant.extended": self = .adminPlanGrantExtended
+        case "admin.plan_grant.revoked": self = .adminPlanGrantRevoked
+        case "admin.plan_grant.ended": self = .adminPlanGrantEnded
+        case "admin.platform_discount.created": self = .adminPlatformDiscountCreated
+        case "admin.platform_discount.revoked": self = .adminPlatformDiscountRevoked
+        case "admin.subscription.cancelled": self = .adminSubscriptionCancelled
+        case "admin.subscription.resumed": self = .adminSubscriptionResumed
+        case "admin.money.exported": self = .adminMoneyExported
+        case "admin.payment_search.pd_viewed": self = .adminPaymentSearchPdViewed
         case "workspace.sso_provider_created": self = .workspaceSsoProviderCreated
         case "workspace.group_created": self = .workspaceGroupCreated
         case "workspace.group_updated": self = .workspaceGroupUpdated
@@ -645,6 +733,9 @@ public enum AuditEntryAction: TungoEnum {
         case "account.deletion_scheduled": self = .accountDeletionScheduled
         case "account.deletion_cancelled": self = .accountDeletionCancelled
         case "account.deleted": self = .accountDeleted
+        case "langfuse.traces_purged": self = .langfuseTracesPurged
+        case "admin.dialog.langfuse_dataset": self = .adminDialogLangfuseDataset
+        case "admin.dialog.langfuse_annotation": self = .adminDialogLangfuseAnnotation
         case "account.email_code_sent": self = .accountEmailCodeSent
         case "account.email_bound": self = .accountEmailBound
         case "account.telegram_merged": self = .accountTelegramMerged
@@ -677,6 +768,7 @@ public enum AuditEntryAction: TungoEnum {
         case "admin.setting.changed": self = .adminSettingChanged
         case "admin.logs.purged": self = .adminLogsPurged
         case "admin.dialog.pd_viewed": self = .adminDialogPdViewed
+        case "admin.dialog.rating_comments_viewed": self = .adminDialogRatingCommentsViewed
         case "admin.dialog.label_set": self = .adminDialogLabelSet
         case "admin.dialog.label_removed": self = .adminDialogLabelRemoved
         case "admin.journal.pd_viewed": self = .adminJournalPdViewed
@@ -688,6 +780,18 @@ public enum AuditEntryAction: TungoEnum {
         case "site.post_deleted": self = .sitePostDeleted
         case "site.legal_published": self = .siteLegalPublished
         case "site.trackers_saved": self = .siteTrackersSaved
+        case "help.section_created": self = .helpSectionCreated
+        case "help.section_updated": self = .helpSectionUpdated
+        case "help.section_deleted": self = .helpSectionDeleted
+        case "help.article_created": self = .helpArticleCreated
+        case "help.article_updated": self = .helpArticleUpdated
+        case "help.article_deleted": self = .helpArticleDeleted
+        case "help.reordered": self = .helpReordered
+        case "support.ticket_created": self = .supportTicketCreated
+        case "admin.support.replied": self = .adminSupportReplied
+        case "admin.support.note_added": self = .adminSupportNoteAdded
+        case "admin.support.ticket_updated": self = .adminSupportTicketUpdated
+        case "admin.support.attachment_viewed": self = .adminSupportAttachmentViewed
         case "canary.triggered": self = .canaryTriggered
         case "billing.payment.new": self = .billingPaymentNew
         case "billing.payment.pending": self = .billingPaymentPending
@@ -760,6 +864,16 @@ public enum AuditEntryAction: TungoEnum {
         case .teamSeatsReduced: return "team.seats_reduced"
         case .adminWorkspaceKindChanged: return "admin.workspace.kind_changed"
         case .adminWorkspaceContractSeats: return "admin.workspace.contract_seats"
+        case .adminPlanGrantCreated: return "admin.plan_grant.created"
+        case .adminPlanGrantExtended: return "admin.plan_grant.extended"
+        case .adminPlanGrantRevoked: return "admin.plan_grant.revoked"
+        case .adminPlanGrantEnded: return "admin.plan_grant.ended"
+        case .adminPlatformDiscountCreated: return "admin.platform_discount.created"
+        case .adminPlatformDiscountRevoked: return "admin.platform_discount.revoked"
+        case .adminSubscriptionCancelled: return "admin.subscription.cancelled"
+        case .adminSubscriptionResumed: return "admin.subscription.resumed"
+        case .adminMoneyExported: return "admin.money.exported"
+        case .adminPaymentSearchPdViewed: return "admin.payment_search.pd_viewed"
         case .workspaceSsoProviderCreated: return "workspace.sso_provider_created"
         case .workspaceGroupCreated: return "workspace.group_created"
         case .workspaceGroupUpdated: return "workspace.group_updated"
@@ -823,6 +937,9 @@ public enum AuditEntryAction: TungoEnum {
         case .accountDeletionScheduled: return "account.deletion_scheduled"
         case .accountDeletionCancelled: return "account.deletion_cancelled"
         case .accountDeleted: return "account.deleted"
+        case .langfuseTracesPurged: return "langfuse.traces_purged"
+        case .adminDialogLangfuseDataset: return "admin.dialog.langfuse_dataset"
+        case .adminDialogLangfuseAnnotation: return "admin.dialog.langfuse_annotation"
         case .accountEmailCodeSent: return "account.email_code_sent"
         case .accountEmailBound: return "account.email_bound"
         case .accountTelegramMerged: return "account.telegram_merged"
@@ -855,6 +972,7 @@ public enum AuditEntryAction: TungoEnum {
         case .adminSettingChanged: return "admin.setting.changed"
         case .adminLogsPurged: return "admin.logs.purged"
         case .adminDialogPdViewed: return "admin.dialog.pd_viewed"
+        case .adminDialogRatingCommentsViewed: return "admin.dialog.rating_comments_viewed"
         case .adminDialogLabelSet: return "admin.dialog.label_set"
         case .adminDialogLabelRemoved: return "admin.dialog.label_removed"
         case .adminJournalPdViewed: return "admin.journal.pd_viewed"
@@ -866,6 +984,18 @@ public enum AuditEntryAction: TungoEnum {
         case .sitePostDeleted: return "site.post_deleted"
         case .siteLegalPublished: return "site.legal_published"
         case .siteTrackersSaved: return "site.trackers_saved"
+        case .helpSectionCreated: return "help.section_created"
+        case .helpSectionUpdated: return "help.section_updated"
+        case .helpSectionDeleted: return "help.section_deleted"
+        case .helpArticleCreated: return "help.article_created"
+        case .helpArticleUpdated: return "help.article_updated"
+        case .helpArticleDeleted: return "help.article_deleted"
+        case .helpReordered: return "help.reordered"
+        case .supportTicketCreated: return "support.ticket_created"
+        case .adminSupportReplied: return "admin.support.replied"
+        case .adminSupportNoteAdded: return "admin.support.note_added"
+        case .adminSupportTicketUpdated: return "admin.support.ticket_updated"
+        case .adminSupportAttachmentViewed: return "admin.support.attachment_viewed"
         case .canaryTriggered: return "canary.triggered"
         case .billingPaymentNew: return "billing.payment.new"
         case .billingPaymentPending: return "billing.payment.pending"

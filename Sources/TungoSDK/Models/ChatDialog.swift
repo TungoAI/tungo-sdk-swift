@@ -19,6 +19,10 @@ public struct ChatDialog: Codable, Hashable, Sendable {
     public var messages: [ChatMessage]
     /// false — персональные данные не раскрыты (сменился ключ шифрования): вместо БИН, имён и счетов в тексте метки вида «[ПД-БИН-1]». Показать предупреждение
     public var pdRestored: Bool
+    /// Оценка разговора человеком; null — не оценён
+    public var rating: ChatDialogRating?
+    /// true — пора предложить человеку оценить разговор (форма 1–5 с комментарием). Решает ядро по настройке: достаточно ответов ИИ в разговоре, разговор не оценён, человек не нажимал «не сейчас», и ему не предлагали в последние дни. Пока человек не ответил, предложение остаётся в этом же разговоре и не появляется в других. Ответ — PUT …/chat/{id}/rating, отказ — POST …/chat/{id}/rating/dismiss. По ключу API всегда false
+    public var ratingPrompt: Bool
     /// true — идёт ход: дочитать его потоком GET …/chat/{id}/events?turn=<turn>
     public var running: Bool
     /// Название одной строкой: человека, иначе от ИИ, иначе первый вопрос. Откуда оно — title_source
@@ -36,6 +40,8 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         messageCount: Double,
         messages: [ChatMessage],
         pdRestored: Bool,
+        rating: ChatDialogRating?,
+        ratingPrompt: Bool,
         running: Bool,
         title: String,
         titleSource: ChatTitleSource,
@@ -52,6 +58,8 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         self.messageCount = messageCount
         self.messages = messages
         self.pdRestored = pdRestored
+        self.rating = rating
+        self.ratingPrompt = ratingPrompt
         self.running = running
         self.title = title
         self.titleSource = titleSource
@@ -68,6 +76,8 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         case messageCount = "message_count"
         case messages
         case pdRestored = "pd_restored"
+        case rating
+        case ratingPrompt = "rating_prompt"
         case running
         case title
         case titleSource = "title_source"
@@ -85,6 +95,8 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         messageCount = try container.decode(Double.self, forKey: .messageCount)
         messages = try container.decode([ChatMessage].self, forKey: .messages)
         pdRestored = try container.decode(Bool.self, forKey: .pdRestored)
+        rating = try container.decodeIfPresent(ChatDialogRating.self, forKey: .rating)
+        ratingPrompt = try container.decode(Bool.self, forKey: .ratingPrompt)
         running = try container.decode(Bool.self, forKey: .running)
         title = try container.decode(String.self, forKey: .title)
         titleSource = try container.decode(ChatTitleSource.self, forKey: .titleSource)
@@ -102,6 +114,8 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         try container.encode(messageCount, forKey: .messageCount)
         try container.encode(messages, forKey: .messages)
         try container.encode(pdRestored, forKey: .pdRestored)
+        try container.encode(rating, forKey: .rating)
+        try container.encode(ratingPrompt, forKey: .ratingPrompt)
         try container.encode(running, forKey: .running)
         try container.encode(title, forKey: .title)
         try container.encode(titleSource, forKey: .titleSource)

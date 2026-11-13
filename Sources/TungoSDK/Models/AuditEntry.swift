@@ -60,6 +60,16 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `team.seats_reduced` — Сокращено число мест с продления
     /// - `admin.workspace.kind_changed` — Администратор платформы сменил вид организации
     /// - `admin.workspace.contract_seats` — Администратор платформы задал места по договору
+    /// - `admin.plan_grant.created` — Платформа выдала организации тариф бесплатно до даты
+    /// - `admin.plan_grant.extended` — Платформа продлила выданный тариф
+    /// - `admin.plan_grant.revoked` — Платформа отозвала выданный тариф досрочно
+    /// - `admin.plan_grant.ended` — Срок выданного тарифа закончился
+    /// - `admin.platform_discount.created` — Платформа дала скидку на расход платформы разработчиков
+    /// - `admin.platform_discount.revoked` — Платформа отозвала скидку на расход платформы разработчиков
+    /// - `admin.subscription.cancelled` — Администратор платформы отменил продление подписки
+    /// - `admin.subscription.resumed` — Администратор платформы вернул продление подписки
+    /// - `admin.money.exported` — Администратор платформы выгрузил список в CSV
+    /// - `admin.payment_search.pd_viewed` — Поддержка открыла реквизиты плательщиков в поиске платежей
     /// - `workspace.sso_provider_created` — SSO: подключён сервер входа
     /// - `workspace.group_created` — Группа создана
     /// - `workspace.group_updated` — Группа изменена
@@ -123,6 +133,9 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `account.deletion_scheduled` — Аккаунт помечен к удалению
     /// - `account.deletion_cancelled` — Удаление аккаунта отменено
     /// - `account.deleted` — Аккаунт удалён и обезличен
+    /// - `langfuse.traces_purged` — Трассы ИИ удалены из Langfuse: по сроку хранения, с аккаунтом или после отзыва согласия
+    /// - `admin.dialog.langfuse_dataset` — Ход разговора отправлен в набор Langfuse (платформа)
+    /// - `admin.dialog.langfuse_annotation` — Ход разговора отправлен в очередь разметки Langfuse (платформа)
     /// - `account.email_code_sent` — Запрошен код подтверждения почты (аккаунт Telegram)
     /// - `account.email_bound` — Почта привязана к аккаунту Telegram
     /// - `account.telegram_merged` — Telegram привязан к аккаунту с подтверждённой почтой, аккаунт Telegram закрыт
@@ -155,6 +168,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `admin.setting.changed` — Настройка платформы изменена
     /// - `admin.logs.purged` — Журнал запросов и итогов ходов ИИ убран вручную (платформа)
     /// - `admin.dialog.pd_viewed` — Поддержка открыла разговор с персональными данными
+    /// - `admin.dialog.rating_comments_viewed` — Поддержка открыла комментарии человека к оценкам разговора
     /// - `admin.dialog.label_set` — Оценка ответа для обучения поставлена или заменена (платформа)
     /// - `admin.dialog.label_removed` — Оценка ответа для обучения удалена (платформа)
     /// - `admin.journal.pd_viewed` — Поддержка открыла журнал ИИ-бухгалтера с персональными данными
@@ -166,6 +180,18 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `site.post_deleted` — Черновик статьи блога удалён (платформа)
     /// - `site.legal_published` — Опубликована новая редакция документа сайта (платформа)
     /// - `site.trackers_saved` — Изменены счётчики и коды подтверждения сайта (платформа)
+    /// - `help.section_created` — Центр помощи: раздел заведён (платформа)
+    /// - `help.section_updated` — Центр помощи: раздел изменён (платформа)
+    /// - `help.section_deleted` — Центр помощи: раздел удалён (платформа)
+    /// - `help.article_created` — Центр помощи: статья заведена (платформа)
+    /// - `help.article_updated` — Центр помощи: статья изменена, опубликована или скрыта (платформа)
+    /// - `help.article_deleted` — Центр помощи: статья удалена (платформа)
+    /// - `help.reordered` — Центр помощи: порядок разделов или статей изменён (платформа)
+    /// - `support.ticket_created` — Создано обращение в поддержку
+    /// - `admin.support.replied` — Поддержка ответила на обращение
+    /// - `admin.support.note_added` — Поддержка добавила внутреннюю заметку к обращению
+    /// - `admin.support.ticket_updated` — Поддержка изменила обращение: состояние, категорию, приоритет или исполнителя
+    /// - `admin.support.attachment_viewed` — Поддержка скачала вложение обращения
     /// - `canary.triggered` — Сработала приманка: украденный ключ или почта «сотрудника» (платформа)
     /// - `billing.payment.new` — Платёж: создан
     /// - `billing.payment.pending` — Платёж: отправлен в банк

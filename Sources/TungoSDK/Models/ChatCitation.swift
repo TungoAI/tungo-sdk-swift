@@ -2,48 +2,118 @@
 
 import Foundation
 
-/// Источник ответа: норма закона, статья базы знаний
+/// Источник ответа: норма закона, статья базы знаний. Список источников — по порядку первой ссылки в тексте ответа, без повторов. В самом тексте ответа списка источников нет: только короткие ссылки по месту («(НК РК, ст. 445, п. 1)»)
 public struct ChatCitation: Codable, Hashable, Sendable {
-    /// Редакция нормы (на какую дату)
+    /// Номер статьи
+    public var article: String?
+    /// Номер главы — у источников без статей
+    public var chapter: String?
+    /// Документ коротко: принятое сокращение, если оно есть в базе («НК РК»), иначе название обычным регистром («Социальный кодекс Республики Казахстан»)
+    public var document: String
+    /// Редакция нормы словами
     public var edition: String?
-    /// Откуда: код нормы или статьи базы знаний
+    /// Дата начала редакции, ГГГГ-ММ-ДД
+    public var editionDate: String?
+    /// Заголовок статьи без «Статья N.» — вторая строка чипа или подсказка
+    public var heading: String?
+    /// Короткая подпись для чипа: документ и место в нём, без редакции и пометок
+    public var label: String
+    /// Как источник назван в тексте ответа — дословные куски текста («ст. 445», «статьи 445»): их можно сделать ссылкой на этот источник. Только в итоге хода и в истории, в событии потока поля нет. Поля нет и тогда, когда статья с этим номером есть среди источников ответа у двух разных документов: по номеру их не различить
+    public var mentions: [String]?
+    /// Пометка о статусе или природе источника — показывать обязательно: «УТРАТИЛА СИЛУ с 01.01.2026», «по разъяснению КГД», «позиция органа (не норма права)»
+    public var note: String?
+    /// Номер пункта
+    public var point: String?
+    /// Подпись целиком, как раньше: документ, место, редакция и пометки одной строкой. Для показа удобнее label, edition и note по отдельности
     public var source: String
-    /// Название источника для показа
+    /// Номер подпункта
+    public var subpoint: String?
+    /// Заголовок статьи целиком, с «Статья N.» (как раньше). Без номера — heading
     public var title: String
-    /// Ссылка на текст источника, если есть
+    /// Ссылка на текст источника: по ней источник открывают. Она же — ключ источника внутри ответа
     public var url: String?
 
     public init(
+        document: String,
+        label: String,
         source: String,
         title: String,
+        article: String? = nil,
+        chapter: String? = nil,
         edition: String? = nil,
+        editionDate: String? = nil,
+        heading: String? = nil,
+        mentions: [String]? = nil,
+        note: String? = nil,
+        point: String? = nil,
+        subpoint: String? = nil,
         url: String? = nil
     ) {
+        self.article = article
+        self.chapter = chapter
+        self.document = document
         self.edition = edition
+        self.editionDate = editionDate
+        self.heading = heading
+        self.label = label
+        self.mentions = mentions
+        self.note = note
+        self.point = point
         self.source = source
+        self.subpoint = subpoint
         self.title = title
         self.url = url
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
+        case article
+        case chapter
+        case document
         case edition
+        case editionDate = "edition_date"
+        case heading
+        case label
+        case mentions
+        case note
+        case point
         case source
+        case subpoint
         case title
         case url
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        article = try container.decodeIfPresent(String.self, forKey: .article)
+        chapter = try container.decodeIfPresent(String.self, forKey: .chapter)
+        document = try container.decode(String.self, forKey: .document)
         edition = try container.decodeIfPresent(String.self, forKey: .edition)
+        editionDate = try container.decodeIfPresent(String.self, forKey: .editionDate)
+        heading = try container.decodeIfPresent(String.self, forKey: .heading)
+        label = try container.decode(String.self, forKey: .label)
+        mentions = try container.decodeIfPresent([String].self, forKey: .mentions)
+        note = try container.decodeIfPresent(String.self, forKey: .note)
+        point = try container.decodeIfPresent(String.self, forKey: .point)
         source = try container.decode(String.self, forKey: .source)
+        subpoint = try container.decodeIfPresent(String.self, forKey: .subpoint)
         title = try container.decode(String.self, forKey: .title)
         url = try container.decodeIfPresent(String.self, forKey: .url)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(article, forKey: .article)
+        try container.encodeIfPresent(chapter, forKey: .chapter)
+        try container.encode(document, forKey: .document)
         try container.encodeIfPresent(edition, forKey: .edition)
+        try container.encodeIfPresent(editionDate, forKey: .editionDate)
+        try container.encodeIfPresent(heading, forKey: .heading)
+        try container.encode(label, forKey: .label)
+        try container.encodeIfPresent(mentions, forKey: .mentions)
+        try container.encodeIfPresent(note, forKey: .note)
+        try container.encodeIfPresent(point, forKey: .point)
         try container.encode(source, forKey: .source)
+        try container.encodeIfPresent(subpoint, forKey: .subpoint)
         try container.encode(title, forKey: .title)
         try container.encodeIfPresent(url, forKey: .url)
     }

@@ -18,12 +18,16 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
     public var nextAction: ChatNextAction?
     /// Номера предложений этого хода — то же, что proposal-блоки, списком
     public var proposalIDs: [String]
+    /// Оценка этого ответа человеком; null — не оценён
+    public var rating: ChatMessageRating?
     /// Ответ ИИ
     public var role: String
     /// done — ход закончился сам; stopped — нажали «Стоп»; error — ошибка, отказ модели или предел шагов
     public var state: ChatAssistantMessageState
     /// Размышления модели за ход одним текстом; пусто — не было
     public var thinking: String
+    /// Номер ответа в разговоре (он же X-Turn-No и средняя часть id): по нему ответ оценивают — PUT …/chat/{id}/messages/{turn}/rating
+    public var turnNo: Int64
 
     public init(
         at: String,
@@ -33,8 +37,10 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         id: String,
         nextAction: ChatNextAction?,
         proposalIDs: [String],
+        rating: ChatMessageRating?,
         state: ChatAssistantMessageState,
         thinking: String,
+        turnNo: Int64,
         role: String = "assistant"
     ) {
         self.at = at
@@ -44,9 +50,11 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         self.id = id
         self.nextAction = nextAction
         self.proposalIDs = proposalIDs
+        self.rating = rating
         self.role = role
         self.state = state
         self.thinking = thinking
+        self.turnNo = turnNo
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
@@ -57,9 +65,11 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         case id
         case nextAction = "next_action"
         case proposalIDs = "proposal_ids"
+        case rating
         case role
         case state
         case thinking
+        case turnNo = "turn_no"
     }
 
     public init(from decoder: Decoder) throws {
@@ -71,9 +81,11 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         id = try container.decode(String.self, forKey: .id)
         nextAction = try container.decodeIfPresent(ChatNextAction.self, forKey: .nextAction)
         proposalIDs = try container.decode([String].self, forKey: .proposalIDs)
+        rating = try container.decodeIfPresent(ChatMessageRating.self, forKey: .rating)
         role = try container.decode(String.self, forKey: .role)
         state = try container.decode(ChatAssistantMessageState.self, forKey: .state)
         thinking = try container.decode(String.self, forKey: .thinking)
+        turnNo = try container.decode(Int64.self, forKey: .turnNo)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -85,8 +97,10 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         try container.encode(id, forKey: .id)
         try container.encode(nextAction, forKey: .nextAction)
         try container.encode(proposalIDs, forKey: .proposalIDs)
+        try container.encode(rating, forKey: .rating)
         try container.encode(role, forKey: .role)
         try container.encode(state, forKey: .state)
         try container.encode(thinking, forKey: .thinking)
+        try container.encode(turnNo, forKey: .turnNo)
     }
 }

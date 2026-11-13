@@ -10,6 +10,8 @@ public struct ChatEventDone: Codable, Hashable, Sendable {
     public var choiceID: String?
     /// Сколько ход стоил, в тиынах (1 ₸ = 100 тиын). Только в потоке для ключа API (платформа разработчиков); кабинету стоимость ответа не отдаётся
     public var costTiyn: Int64?
+    /// Пора предложить человеку оценить разговор — те же правила, что у rating_prompt в GET …/chat/{id}. Поля нет — не предлагать. Ключу API не приходит
+    public var ratingPrompt: Bool?
     /// Чем кончился ход: end_turn — ответ готов; awaiting_user — ждёт ответа на вопрос choice; budget — кончился лимит; aborted — остановили; refusal — модель отказалась; context_overflow — разговор слишком длинный; max_iterations — предел шагов; elsewhere — ход шёл на другом сервере и закончился, ответ и его итог — в GET …/chat/{id}
     public var stopReason: String?
     /// Вид события: done
@@ -20,6 +22,7 @@ public struct ChatEventDone: Codable, Hashable, Sendable {
         answer: String? = nil,
         choiceID: String? = nil,
         costTiyn: Int64? = nil,
+        ratingPrompt: Bool? = nil,
         stopReason: String? = nil,
         type: String = "done",
         usage: ChatUsage? = nil
@@ -27,6 +30,7 @@ public struct ChatEventDone: Codable, Hashable, Sendable {
         self.answer = answer
         self.choiceID = choiceID
         self.costTiyn = costTiyn
+        self.ratingPrompt = ratingPrompt
         self.stopReason = stopReason
         self.type = type
         self.usage = usage
@@ -36,6 +40,7 @@ public struct ChatEventDone: Codable, Hashable, Sendable {
         case answer
         case choiceID = "choice_id"
         case costTiyn = "cost_tiyn"
+        case ratingPrompt = "rating_prompt"
         case stopReason = "stop_reason"
         case type
         case usage
@@ -46,6 +51,7 @@ public struct ChatEventDone: Codable, Hashable, Sendable {
         answer = try container.decodeIfPresent(String.self, forKey: .answer)
         choiceID = try container.decodeIfPresent(String.self, forKey: .choiceID)
         costTiyn = try container.decodeIfPresent(Int64.self, forKey: .costTiyn)
+        ratingPrompt = try container.decodeIfPresent(Bool.self, forKey: .ratingPrompt)
         stopReason = try container.decodeIfPresent(String.self, forKey: .stopReason)
         type = try container.decode(String.self, forKey: .type)
         usage = try container.decodeIfPresent(ChatUsage.self, forKey: .usage)
@@ -56,6 +62,7 @@ public struct ChatEventDone: Codable, Hashable, Sendable {
         try container.encodeIfPresent(answer, forKey: .answer)
         try container.encodeIfPresent(choiceID, forKey: .choiceID)
         try container.encodeIfPresent(costTiyn, forKey: .costTiyn)
+        try container.encodeIfPresent(ratingPrompt, forKey: .ratingPrompt)
         try container.encodeIfPresent(stopReason, forKey: .stopReason)
         try container.encode(type, forKey: .type)
         try container.encodeIfPresent(usage, forKey: .usage)
