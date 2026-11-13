@@ -66,6 +66,11 @@ final class StreamingTests: MockTestCase {
             XCTAssertEqual(turn.costTiyn, expect["cost_tiyn"]?.intValue, label)
             XCTAssertEqual(turn.choiceID, expect["choice_id"]?.stringValue, label)
             XCTAssertEqual(turn.events.map { $0.typeTag ?? "" }, expect["event_types"]?.arrayValue?.compactMap { $0.stringValue }, label)
+            if let wanted = expect["next"] {
+                let nexts = try turn.events.filter { $0.typeTag == "next" }.map { try JSONValue(encoding: $0) }
+                let got = nexts.map { JSONValue.object(["followups": $0["followups"] ?? .null, "action": $0["action"] ?? .null]) }
+                XCTAssertEqual(got, [wanted], label)
+            }
             let usage = try turn.usage.map { try JSONValue(encoding: $0) } ?? .null
             XCTAssertEqual(usage, expect["usage"] ?? .null, label)
             if let wanted = expect["error"], !wanted.isNull {

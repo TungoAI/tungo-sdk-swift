@@ -215,7 +215,7 @@ The three event-stream endpoints (`chat.listEvents`, `feed.listEvents`, `batches
 
 Nothing is read before the first iteration and events are read one chunk at a time, on demand. Leaving the loop, `stream.cancel()` or letting go of a stream that was never iterated closes the connection. Cancelling the task that iterates makes the loop throw `CancellationError`. The built-in transport does not slow the server down: bytes that arrived but were not read yet stay in memory, so do not keep a stream open without reading it.
 
-`collect()` throws `DecodeError` when the stream ends without its final `done` event (the partial text is in the error's `body`), so a cut connection never looks like a finished answer; the plain loop simply ends. A 2xx answer to a streaming call that is not `text/event-stream` is a `DecodeError` as well. The exception is a finished chat turn that the API replays for a repeated `Idempotency-Key` (`application/json` with `Idempotent-Replayed: true`): its stored result arrives as the events of that turn, ending with `done`.
+`collect()` throws `DecodeError` when the stream ends without its final `done` event (the partial text is in the error's `body`), so a cut connection never looks like a finished answer; the plain loop simply ends. A 2xx answer to a streaming call that is not `text/event-stream` is a `DecodeError` as well. The exception is a finished chat turn that the API replays for a repeated `Idempotency-Key` (`application/json` with `Idempotent-Replayed: true`): its stored result arrives as the events of that turn, ending with `next` (follow-ups and the next action, when it has them) and `done`.
 
 ## Webhooks
 

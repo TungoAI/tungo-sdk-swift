@@ -396,7 +396,7 @@ final class ClientCore: Sendable {
     }
 
     /// Turns a replayed ChatTurnResult into the event stream of the turn it stands for: text (the answer),
-    /// proposal, question, citation, error and choice events, then done. The dialog id and the turn number,
+    /// proposal, question, citation, error, choice and next events, then done. The dialog id and the turn number,
     /// which a replay carries only in the body, become the X-Dialog-Id and X-Turn-No headers when they are
     /// missing. `nil` when the body is not a chat turn result.
     static func replayAsEventStream(_ response: TungoHTTPResponse, body: Data) -> TungoHTTPResponse? {
@@ -446,6 +446,15 @@ final class ClientCore: Sendable {
         if case .object(let pending)? = result["pending_question"] {
             emit("choice", pending)
             if let choiceID = pending["choice_id"] { done["choice_id"] = choiceID }
+        }
+        // A live turn ends its finished answer with next right before done; the stored result keeps it
+        // as followups and next_action.
+        var followups: [JSONValue] = []
+        if case .array(let items)? = result["followups"] { followups = items }
+        var action: JSONValue = .null
+        if case .object(let object)? = result["next_action"] { action = .object(object) }
+        if !followups.isEmpty || action != .null {
+            emit("next", ["followups": .array(followups), "action": action])
         }
         emit("done", done)
         return TungoHTTPResponse(statusCode: response.statusCode, headers: headers, data: out)
