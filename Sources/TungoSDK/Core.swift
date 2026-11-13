@@ -28,6 +28,19 @@ struct RequestSpec: Sendable {
     var longRunning = false
 }
 
+/// The `idempotency_key` field of a JSON object body (approving a proposal documents it as the same
+/// as the header), trimmed like the API trims it. The API prefers the header over the field, so a
+/// generated header would make the caller's own key useless. A key that cannot travel in a header
+/// (outside printable ASCII) is ignored here.
+func bodyIdempotencyKey(_ spec: RequestSpec) -> String? {
+    guard let body = spec.body, (spec.contentType ?? "application/json").hasPrefix("application/json"),
+          let object = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any],
+          let value = object["idempotency_key"] as? String else { return nil }
+    let key = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !key.isEmpty, key.unicodeScalars.allSatisfy({ $0.value >= 0x20 && $0.value <= 0x7e }) else { return nil }
+    return key
+}
+
 /// Percent-encoding of path segments and query components: only RFC 3986 unreserved characters stay.
 enum PercentEncoding {
     static func encode(_ value: String) -> String {
@@ -472,6 +485,9 @@ final class ClientCore: Sendable {
         var idempotencyKey = spec.idempotent ? options.idempotencyKey : nil
         if idempotencyKey == nil, spec.idempotent, let key = spec.defaultIdempotencyKey, !key.isEmpty {
             idempotencyKey = key
+        }
+        if idempotencyKey == nil, spec.idempotent {
+            idempotencyKey = bodyIdempotencyKey(spec)
         }
         if idempotencyKey == nil, spec.idempotent {
             idempotencyKey = UUID().uuidString.lowercased()
