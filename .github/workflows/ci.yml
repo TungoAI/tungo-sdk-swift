@@ -27,7 +27,7 @@ jobs:
       matrix:
         swift: ["5.10", "6.0"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build the library, the tests and the examples
         run: swift build --build-tests
       - name: Test
@@ -43,7 +43,7 @@ jobs:
         # starts macos-14 jobs.
         os: [macos-15]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build the library, the tests and the examples
         run: swift build --build-tests
       - name: Test
