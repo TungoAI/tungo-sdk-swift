@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Блок ответа в истории — те же виды, что клиент собирает из живого потока: text | tool | proposal | batch | question | error
+/// Блок ответа в истории — те же виды, что клиент собирает из живого потока: text | tool | proposal | file | batch | memory | question | error
 ///
 /// A union discriminated by `kind`. A variant this version of the SDK does not know, or a known
 /// variant whose payload does not match this version, is kept as ``unknown(_:)`` with its raw JSON.
@@ -13,8 +13,12 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
     case tool(ChatHistoryTool)
     /// `kind: "proposal"`
     case proposal(ChatHistoryProposal)
+    /// `kind: "file"`
+    case file(ChatHistoryFile)
     /// `kind: "batch"`
     case batch(ChatHistoryBatch)
+    /// `kind: "memory"`
+    case memory(ChatHistoryMemory)
     /// `kind: "question"`
     case question(ChatHistoryQuestion)
     /// `kind: "error"`
@@ -39,9 +43,19 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
                 self = .proposal(value)
                 return
             }
+        case "file":
+            if let value = try? ChatHistoryFile(from: decoder) {
+                self = .file(value)
+                return
+            }
         case "batch":
             if let value = try? ChatHistoryBatch(from: decoder) {
                 self = .batch(value)
+                return
+            }
+        case "memory":
+            if let value = try? ChatHistoryMemory(from: decoder) {
+                self = .memory(value)
                 return
             }
         case "question":
@@ -65,7 +79,9 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
         case .text(let value): try value.encode(to: encoder)
         case .tool(let value): try value.encode(to: encoder)
         case .proposal(let value): try value.encode(to: encoder)
+        case .file(let value): try value.encode(to: encoder)
         case .batch(let value): try value.encode(to: encoder)
+        case .memory(let value): try value.encode(to: encoder)
         case .question(let value): try value.encode(to: encoder)
         case .error(let value): try value.encode(to: encoder)
         case .unknown(let value): try value.encode(to: encoder)
@@ -78,7 +94,9 @@ public enum ChatHistoryBlock: Codable, Hashable, Sendable {
         case .text: return "text"
         case .tool: return "tool"
         case .proposal: return "proposal"
+        case .file: return "file"
         case .batch: return "batch"
+        case .memory: return "memory"
         case .question: return "question"
         case .error: return "error"
         case .unknown(let value): return value["kind"]?.stringValue

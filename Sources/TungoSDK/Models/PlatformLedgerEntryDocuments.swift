@@ -4,7 +4,7 @@ import Foundation
 
 /// Документы пополнения (kind = purchase) из его платежа. null — у остальных видов и у ключа не на все компании. Файл PDF ядро не формирует: чек выпускает касса, ссылка появляется в receipt_url
 public struct PlatformLedgerEntryDocuments: Codable, Hashable, Sendable {
-    /// Номер акта выполненных работ (ACT-…), когда платёж прошёл; null — нет
+    /// Устарело: номер акта (ACT-…) только у старых платежей; у новых — null, акт ежемесячный (GET /v1/workspaces/{ws}/documents)
     public var actNumber: String?
     /// Номер счёта на оплату по этому пополнению (TG-…); null — нет
     public var invoiceNumber: String?

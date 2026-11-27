@@ -42,6 +42,8 @@ print(reply.answer)
 - ``FormsResource``
 - ``OnecResource``
 - ``AutomationsResource``
+- ``VerificationResource``
+- ``ReleasesResource``
 
 ### Errors
 

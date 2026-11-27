@@ -31,6 +31,10 @@ public enum ChatEvent: Codable, Hashable, Sendable {
     case batch(ChatEventBatch)
     /// `type: "batch_report"`
     case batchReport(ChatEventBatchReport)
+    /// `type: "file"`
+    case file(ChatEventFile)
+    /// `type: "memory"`
+    case memory(ChatEventMemory)
     /// `type: "next"`
     case next(ChatEventNext)
     /// `type: "done"`
@@ -102,6 +106,16 @@ public enum ChatEvent: Codable, Hashable, Sendable {
                 self = .batchReport(value)
                 return
             }
+        case "file":
+            if let value = try? ChatEventFile(from: decoder) {
+                self = .file(value)
+                return
+            }
+        case "memory":
+            if let value = try? ChatEventMemory(from: decoder) {
+                self = .memory(value)
+                return
+            }
         case "next":
             if let value = try? ChatEventNext(from: decoder) {
                 self = .next(value)
@@ -137,6 +151,8 @@ public enum ChatEvent: Codable, Hashable, Sendable {
         case .error(let value): try value.encode(to: encoder)
         case .batch(let value): try value.encode(to: encoder)
         case .batchReport(let value): try value.encode(to: encoder)
+        case .file(let value): try value.encode(to: encoder)
+        case .memory(let value): try value.encode(to: encoder)
         case .next(let value): try value.encode(to: encoder)
         case .done(let value): try value.encode(to: encoder)
         case .title(let value): try value.encode(to: encoder)
@@ -159,6 +175,8 @@ public enum ChatEvent: Codable, Hashable, Sendable {
         case .error: return "error"
         case .batch: return "batch"
         case .batchReport: return "batch_report"
+        case .file: return "file"
+        case .memory: return "memory"
         case .next: return "next"
         case .done: return "done"
         case .title: return "title"

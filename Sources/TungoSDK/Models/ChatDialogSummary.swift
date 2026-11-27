@@ -6,6 +6,8 @@ import Foundation
 public struct ChatDialogSummary: Codable, Hashable, Sendable {
     /// id разговора (обычно UUID): по нему продолжают разговор (dialog_id), открывают его GET …/chat/{id} и стирают
     public var id: String
+    /// false — разговор «без памяти»
+    public var memory: Bool
     /// Сколько сообщений в разговоре (вопросы и ответы)
     public var messageCount: Double
     /// true — ИИ сейчас отвечает: показать индикатор
@@ -18,6 +20,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
 
     public init(
         id: String,
+        memory: Bool,
         messageCount: Double,
         running: Bool,
         title: String,
@@ -25,6 +28,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
         updatedAt: String
     ) {
         self.id = id
+        self.memory = memory
         self.messageCount = messageCount
         self.running = running
         self.title = title
@@ -34,6 +38,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case id
+        case memory
         case messageCount = "message_count"
         case running
         case title
@@ -44,6 +49,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
+        memory = try container.decode(Bool.self, forKey: .memory)
         messageCount = try container.decode(Double.self, forKey: .messageCount)
         running = try container.decode(Bool.self, forKey: .running)
         title = try container.decode(String.self, forKey: .title)
@@ -54,6 +60,7 @@ public struct ChatDialogSummary: Codable, Hashable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
+        try container.encode(memory, forKey: .memory)
         try container.encode(messageCount, forKey: .messageCount)
         try container.encode(running, forKey: .running)
         try container.encode(title, forKey: .title)

@@ -349,6 +349,10 @@ private final class Exchange: @unchecked Sendable {
         disarmTimer()
         lock.unlock()
         task.cancel()
+        // The caller gets the timeout now, not when the session reports the cancelled task: on
+        // Linux, URLSession (libcurl) can stay stuck in a request it resends and never report it.
+        // The later completion of the task finds the exchange finished and changes nothing.
+        didComplete(error: URLError(.timedOut))
     }
 }
 

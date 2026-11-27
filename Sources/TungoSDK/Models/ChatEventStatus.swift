@@ -4,9 +4,13 @@ import Foundation
 
 /// Служебное состояние хода без текста ответа
 public struct ChatEventStatus: Codable, Hashable, Sendable {
+    /// Только у code = writing: сколько знаков ответа уже написано (не убывает в пределах одного ответа). Текста ответа в событии нет — он придёт событием text
+    public var chars: Int64?
     /// Что происходит:
     /// - `compacting` — сервер сжимает историю длинного разговора
     /// - `escalating` — ответ перепроверяется более сильной моделью — ход займёт дольше
+    /// - `checking_norm` — ответ сослался на норму, не открыв её: та же модель открывает норму и пишет ответ заново — показанный текст заменит ответ события done
+    /// - `writing` — ответ пишется, но его текст придержан до проверки ссылок на нормы: chars — сколько знаков текста этого витка уже написано (растёт, не чаще ~5 событий в секунду), самого текста в событии нет. Текст витка придёт событием text целиком после проверки; checking_norm или escalating — ответ пишется заново, показанный счёт сбросить
     /// - `elsewhere` — ответ готовится на другом сервере Tungo — он появится целиком, когда будет готов (событие done со stop_reason elsewhere)
     public var code: ChatEventStatusCode?
     /// Что происходит — показать серой строкой
@@ -16,15 +20,18 @@ public struct ChatEventStatus: Codable, Hashable, Sendable {
 
     public init(
         text: String,
+        chars: Int64? = nil,
         code: ChatEventStatusCode? = nil,
         type: String = "status"
     ) {
+        self.chars = chars
         self.code = code
         self.text = text
         self.type = type
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
+        case chars
         case code
         case text
         case type
@@ -32,6 +39,7 @@ public struct ChatEventStatus: Codable, Hashable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        chars = try container.decodeIfPresent(Int64.self, forKey: .chars)
         code = try container.decodeIfPresent(ChatEventStatusCode.self, forKey: .code)
         text = try container.decode(String.self, forKey: .text)
         type = try container.decode(String.self, forKey: .type)
@@ -39,6 +47,7 @@ public struct ChatEventStatus: Codable, Hashable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(chars, forKey: .chars)
         try container.encodeIfPresent(code, forKey: .code)
         try container.encode(text, forKey: .text)
         try container.encode(type, forKey: .type)

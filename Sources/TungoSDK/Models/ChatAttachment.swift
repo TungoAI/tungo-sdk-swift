@@ -2,42 +2,32 @@
 
 import Foundation
 
-/// Файл к вопросу: PDF, скан, Excel, Word, выписка
-public struct ChatAttachment: Codable, Hashable, Sendable {
-    /// Содержимое файла в base64 (можно с префиксом data:…;base64,)
-    public var data: String
-    /// MIME-тип; не обязателен: тип файла определяется по расширению и содержимому
-    public var mediaType: String?
-    /// Имя файла с расширением — по нему определяется тип
-    public var name: String
-
-    public init(
-        data: String,
-        name: String,
-        mediaType: String? = nil
-    ) {
-        self.data = data
-        self.mediaType = mediaType
-        self.name = name
-    }
-
-    private enum CodingKeys: String, CodingKey, CaseIterable {
-        case data
-        case mediaType = "media_type"
-        case name
-    }
+/// Файл к вопросу: PDF, скан, Excel, Word (.docx, .doc), выписка, архив (.zip, .rar, .7z) — base64 в теле или upload_id загрузки по частям
+///
+/// One of: ChatAttachmentData, ChatAttachmentUpload. A value of any other shape is kept as ``unknown(_:)``.
+public enum ChatAttachment: Codable, Hashable, Sendable {
+    case chatAttachmentData(ChatAttachmentData)
+    case chatAttachmentUpload(ChatAttachmentUpload)
+    /// A value of a shape this version of the SDK does not know, with its raw JSON.
+    case unknown(JSONValue)
 
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        data = try container.decode(String.self, forKey: .data)
-        mediaType = try container.decodeIfPresent(String.self, forKey: .mediaType)
-        name = try container.decode(String.self, forKey: .name)
+        let container = try decoder.singleValueContainer()
+        if let value = try? container.decode(ChatAttachmentData.self) {
+            self = .chatAttachmentData(value)
+        } else if let value = try? container.decode(ChatAttachmentUpload.self) {
+            self = .chatAttachmentUpload(value)
+        } else {
+            self = .unknown(try container.decode(JSONValue.self))
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(data, forKey: .data)
-        try container.encodeIfPresent(mediaType, forKey: .mediaType)
-        try container.encode(name, forKey: .name)
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .chatAttachmentData(let value): try container.encode(value)
+        case .chatAttachmentUpload(let value): try container.encode(value)
+        case .unknown(let value): try container.encode(value)
+        }
     }
 }

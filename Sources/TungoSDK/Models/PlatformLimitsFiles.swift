@@ -4,6 +4,12 @@ import Foundation
 
 /// Размеры файлов и тел запросов
 public struct PlatformLimitsFiles: Codable, Hashable, Sendable {
+    /// Один архив, байт; в attachments_total_bytes не входит. Больше attachment_bytes — только загрузкой по частям (POST …/chat/uploads)
+    public var archiveBytes: Int64
+    /// Файлов в архиве вместе с вложенными архивами
+    public var archiveFiles: Int64
+    /// Архивов (.zip, .rar, .7z) в одном сообщении
+    public var archivesPerMessage: Int64
     /// Один файл, байт (до кодирования в base64)
     public var attachmentBytes: Int64
     /// Сколько файлов в одном сообщении чата
@@ -22,8 +28,13 @@ public struct PlatformLimitsFiles: Codable, Hashable, Sendable {
     public var pdfPages: Int64
     /// Тело остальных запросов, байт; больше — 413 payload_too_large
     public var requestBytes: Int64
+    /// Часть загрузки архива (PUT …/chat/uploads/{upload_id}/parts/{n}), байт; последняя — остаток
+    public var uploadPartBytes: Int64
 
     public init(
+        archiveBytes: Int64,
+        archiveFiles: Int64,
+        archivesPerMessage: Int64,
         attachmentBytes: Int64,
         attachmentsPerMessage: Int64,
         attachmentsTotalBytes: Int64,
@@ -32,8 +43,12 @@ public struct PlatformLimitsFiles: Codable, Hashable, Sendable {
         hookEventBytes: Int64,
         imageBytes: Int64,
         pdfPages: Int64,
-        requestBytes: Int64
+        requestBytes: Int64,
+        uploadPartBytes: Int64
     ) {
+        self.archiveBytes = archiveBytes
+        self.archiveFiles = archiveFiles
+        self.archivesPerMessage = archivesPerMessage
         self.attachmentBytes = attachmentBytes
         self.attachmentsPerMessage = attachmentsPerMessage
         self.attachmentsTotalBytes = attachmentsTotalBytes
@@ -43,9 +58,13 @@ public struct PlatformLimitsFiles: Codable, Hashable, Sendable {
         self.imageBytes = imageBytes
         self.pdfPages = pdfPages
         self.requestBytes = requestBytes
+        self.uploadPartBytes = uploadPartBytes
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
+        case archiveBytes = "archive_bytes"
+        case archiveFiles = "archive_files"
+        case archivesPerMessage = "archives_per_message"
         case attachmentBytes = "attachment_bytes"
         case attachmentsPerMessage = "attachments_per_message"
         case attachmentsTotalBytes = "attachments_total_bytes"
@@ -55,10 +74,14 @@ public struct PlatformLimitsFiles: Codable, Hashable, Sendable {
         case imageBytes = "image_bytes"
         case pdfPages = "pdf_pages"
         case requestBytes = "request_bytes"
+        case uploadPartBytes = "upload_part_bytes"
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        archiveBytes = try container.decode(Int64.self, forKey: .archiveBytes)
+        archiveFiles = try container.decode(Int64.self, forKey: .archiveFiles)
+        archivesPerMessage = try container.decode(Int64.self, forKey: .archivesPerMessage)
         attachmentBytes = try container.decode(Int64.self, forKey: .attachmentBytes)
         attachmentsPerMessage = try container.decode(Int64.self, forKey: .attachmentsPerMessage)
         attachmentsTotalBytes = try container.decode(Int64.self, forKey: .attachmentsTotalBytes)
@@ -68,10 +91,14 @@ public struct PlatformLimitsFiles: Codable, Hashable, Sendable {
         imageBytes = try container.decode(Int64.self, forKey: .imageBytes)
         pdfPages = try container.decode(Int64.self, forKey: .pdfPages)
         requestBytes = try container.decode(Int64.self, forKey: .requestBytes)
+        uploadPartBytes = try container.decode(Int64.self, forKey: .uploadPartBytes)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(archiveBytes, forKey: .archiveBytes)
+        try container.encode(archiveFiles, forKey: .archiveFiles)
+        try container.encode(archivesPerMessage, forKey: .archivesPerMessage)
         try container.encode(attachmentBytes, forKey: .attachmentBytes)
         try container.encode(attachmentsPerMessage, forKey: .attachmentsPerMessage)
         try container.encode(attachmentsTotalBytes, forKey: .attachmentsTotalBytes)
@@ -81,5 +108,6 @@ public struct PlatformLimitsFiles: Codable, Hashable, Sendable {
         try container.encode(imageBytes, forKey: .imageBytes)
         try container.encode(pdfPages, forKey: .pdfPages)
         try container.encode(requestBytes, forKey: .requestBytes)
+        try container.encode(uploadPartBytes, forKey: .uploadPartBytes)
     }
 }

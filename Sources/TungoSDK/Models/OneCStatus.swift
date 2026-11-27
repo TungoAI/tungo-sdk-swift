@@ -6,7 +6,7 @@ import Foundation
 public struct OneCStatus: Codable, Hashable, Sendable {
     /// Подключена ли 1С
     public var connected: Bool
-    /// Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; snapshot — загруженная копия базы, только чтение; fake — только в тестах; null — не подключена
+    /// Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; module — через расширение «Tungo в 1С», пока у человека открыта 1С; snapshot — загруженная копия базы, только чтение; fake — только в тестах; null — не подключена
     public var gateway: OneCGateway?
     /// Итог последней проверки; null — не проверялось или не подключена
     public var lastCheck: OneCStatusLastCheck?

@@ -12,6 +12,8 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
     public var dialogID: String
     /// Ошибки хода (как error в событии error); пусто — без ошибок
     public var errors: [ChatTurnError]
+    /// Файлы (Excel, Word, PDF, CSV), которые ИИ собрал в этом ходе
+    public var files: [ChatTurnFile]
     /// Вопросы-продолжения под ответом, до 3, на языке разговора: нажатие — обычный новый вопрос с этим текстом. Пусто — предложить нечего
     public var followups: [String]
     /// Предложенное следующее действие; null — нет
@@ -33,6 +35,7 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         citations: [ChatCitation],
         dialogID: String,
         errors: [ChatTurnError],
+        files: [ChatTurnFile],
         followups: [String],
         nextAction: ChatNextAction?,
         pendingQuestion: ChatPendingQuestion?,
@@ -46,6 +49,7 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         self.citations = citations
         self.dialogID = dialogID
         self.errors = errors
+        self.files = files
         self.followups = followups
         self.nextAction = nextAction
         self.pendingQuestion = pendingQuestion
@@ -61,6 +65,7 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         case citations
         case dialogID = "dialog_id"
         case errors
+        case files
         case followups
         case nextAction = "next_action"
         case pendingQuestion = "pending_question"
@@ -77,6 +82,7 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         citations = try container.decode([ChatCitation].self, forKey: .citations)
         dialogID = try container.decode(String.self, forKey: .dialogID)
         errors = try container.decode([ChatTurnError].self, forKey: .errors)
+        files = try container.decode([ChatTurnFile].self, forKey: .files)
         followups = try container.decode([String].self, forKey: .followups)
         nextAction = try container.decodeIfPresent(ChatNextAction.self, forKey: .nextAction)
         pendingQuestion = try container.decodeIfPresent(ChatPendingQuestion.self, forKey: .pendingQuestion)
@@ -93,6 +99,7 @@ public struct ChatTurnResult: Codable, Hashable, Sendable {
         try container.encode(citations, forKey: .citations)
         try container.encode(dialogID, forKey: .dialogID)
         try container.encode(errors, forKey: .errors)
+        try container.encode(files, forKey: .files)
         try container.encode(followups, forKey: .followups)
         try container.encode(nextAction, forKey: .nextAction)
         try container.encode(pendingQuestion, forKey: .pendingQuestion)

@@ -304,6 +304,8 @@ public struct AutomationsResource: Sendable {
 
     /// Удалить хук
     ///
+    /// Сценарии этого хука не удаляются: они остаются с trigger.hook_id = null и не запускаются событиями, пока им не назначат другой хук (PUT …/scenarios/{id}).
+    ///
     /// Доступ: automations.manage | company.manage.
     ///
     /// Доступно по ключу API.
@@ -321,6 +323,8 @@ public struct AutomationsResource: Sendable {
     }
 
     /// Удалить хук
+    ///
+    /// Сценарии этого хука не удаляются: они остаются с trigger.hook_id = null и не запускаются событиями, пока им не назначат другой хук (PUT …/scenarios/{id}).
     ///
     /// Доступ: automations.manage | company.manage.
     ///

@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; snapshot — загруженная копия базы, только чтение; fake — только в тестах
+/// Как Tungo достаёт данные 1С: odata — живая 1С через интернет; connector — коробочная 1С в офисе через программу Tungo Connector; module — через расширение «Tungo в 1С», пока у человека открыта 1С; snapshot — загруженная копия базы, только чтение; fake — только в тестах
 public enum OneCGateway: TungoEnum {
     /// `odata`
     case odata
@@ -12,10 +12,12 @@ public enum OneCGateway: TungoEnum {
     case fake
     /// `connector`
     case connector
+    /// `module`
+    case module
     /// A value this version of the SDK does not know.
     case unknown(String)
 
-    public static let knownCases: [OneCGateway] = [.odata, .snapshot, .fake, .connector]
+    public static let knownCases: [OneCGateway] = [.odata, .snapshot, .fake, .connector, .module]
 
     public init(rawValue: String) {
         switch rawValue {
@@ -23,6 +25,7 @@ public enum OneCGateway: TungoEnum {
         case "snapshot": self = .snapshot
         case "fake": self = .fake
         case "connector": self = .connector
+        case "module": self = .module
         default: self = .unknown(rawValue)
         }
     }
@@ -33,6 +36,7 @@ public enum OneCGateway: TungoEnum {
         case .snapshot: return "snapshot"
         case .fake: return "fake"
         case .connector: return "connector"
+        case .module: return "module"
         case .unknown(let value): return value
         }
     }

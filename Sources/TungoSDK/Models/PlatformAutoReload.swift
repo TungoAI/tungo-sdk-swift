@@ -8,6 +8,8 @@ public struct PlatformAutoReload: Codable, Hashable, Sendable {
     public var amountTiyn: Int64?
     /// Включено ли автопополнение с карты организации
     public var enabled: Bool
+    /// Автопополнений за календарный месяц по Алматы не больше этого; месячный потолок трат исчерпан — автопополнения нет
+    public var monthlyCountMax: Int64
     /// Сколько автопополнение может списать за месяц, в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸); null — предел платформы
     public var monthlyLimitTiyn: Int64?
     /// Порог: баланс ниже — пополнить, в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸); null — не задан
@@ -16,11 +18,13 @@ public struct PlatformAutoReload: Codable, Hashable, Sendable {
     public init(
         amountTiyn: Int64?,
         enabled: Bool,
+        monthlyCountMax: Int64,
         monthlyLimitTiyn: Int64?,
         thresholdTiyn: Int64?
     ) {
         self.amountTiyn = amountTiyn
         self.enabled = enabled
+        self.monthlyCountMax = monthlyCountMax
         self.monthlyLimitTiyn = monthlyLimitTiyn
         self.thresholdTiyn = thresholdTiyn
     }
@@ -28,6 +32,7 @@ public struct PlatformAutoReload: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case amountTiyn = "amount_tiyn"
         case enabled
+        case monthlyCountMax = "monthly_count_max"
         case monthlyLimitTiyn = "monthly_limit_tiyn"
         case thresholdTiyn = "threshold_tiyn"
     }
@@ -36,6 +41,7 @@ public struct PlatformAutoReload: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         amountTiyn = try container.decodeIfPresent(Int64.self, forKey: .amountTiyn)
         enabled = try container.decode(Bool.self, forKey: .enabled)
+        monthlyCountMax = try container.decode(Int64.self, forKey: .monthlyCountMax)
         monthlyLimitTiyn = try container.decodeIfPresent(Int64.self, forKey: .monthlyLimitTiyn)
         thresholdTiyn = try container.decodeIfPresent(Int64.self, forKey: .thresholdTiyn)
     }
@@ -44,6 +50,7 @@ public struct PlatformAutoReload: Codable, Hashable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(amountTiyn, forKey: .amountTiyn)
         try container.encode(enabled, forKey: .enabled)
+        try container.encode(monthlyCountMax, forKey: .monthlyCountMax)
         try container.encode(monthlyLimitTiyn, forKey: .monthlyLimitTiyn)
         try container.encode(thresholdTiyn, forKey: .thresholdTiyn)
     }

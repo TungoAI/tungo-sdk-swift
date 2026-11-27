@@ -5,23 +5,31 @@ import Foundation
 /// Что происходит:
 /// - `compacting` — сервер сжимает историю длинного разговора
 /// - `escalating` — ответ перепроверяется более сильной моделью — ход займёт дольше
+/// - `checking_norm` — ответ сослался на норму, не открыв её: та же модель открывает норму и пишет ответ заново — показанный текст заменит ответ события done
+/// - `writing` — ответ пишется, но его текст придержан до проверки ссылок на нормы: chars — сколько знаков текста этого витка уже написано (растёт, не чаще ~5 событий в секунду), самого текста в событии нет. Текст витка придёт событием text целиком после проверки; checking_norm или escalating — ответ пишется заново, показанный счёт сбросить
 /// - `elsewhere` — ответ готовится на другом сервере Tungo — он появится целиком, когда будет готов (событие done со stop_reason elsewhere)
 public enum ChatEventStatusCode: TungoEnum {
     /// `compacting`
     case compacting
     /// `escalating`
     case escalating
+    /// `checking_norm`
+    case checkingNorm
+    /// `writing`
+    case writing
     /// `elsewhere`
     case elsewhere
     /// A value this version of the SDK does not know.
     case unknown(String)
 
-    public static let knownCases: [ChatEventStatusCode] = [.compacting, .escalating, .elsewhere]
+    public static let knownCases: [ChatEventStatusCode] = [.compacting, .escalating, .checkingNorm, .writing, .elsewhere]
 
     public init(rawValue: String) {
         switch rawValue {
         case "compacting": self = .compacting
         case "escalating": self = .escalating
+        case "checking_norm": self = .checkingNorm
+        case "writing": self = .writing
         case "elsewhere": self = .elsewhere
         default: self = .unknown(rawValue)
         }
@@ -31,6 +39,8 @@ public enum ChatEventStatusCode: TungoEnum {
         switch self {
         case .compacting: return "compacting"
         case .escalating: return "escalating"
+        case .checkingNorm: return "checking_norm"
+        case .writing: return "writing"
         case .elsewhere: return "elsewhere"
         case .unknown(let value): return value
         }

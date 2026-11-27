@@ -5,13 +5,13 @@ import Foundation
 /// Запуск по событию хука.
 public struct AutomationTriggerHook: Codable, Hashable, Sendable {
     public var filter: AutomationEventFilter?
-    /// Хук, события которого запускают сценарий (hk_…)
-    public var hookID: String
+    /// Хук, события которого запускают сценарий; null — хук удалён: событиями сценарий больше не запускается, пока ему не назначат другой хук (PUT …/scenarios/{id}) (hk_…)
+    public var hookID: String?
     /// `hook` — по событию хука
     public var kind: String
 
     public init(
-        hookID: String,
+        hookID: String?,
         filter: AutomationEventFilter? = nil,
         kind: String = "hook"
     ) {
@@ -29,7 +29,7 @@ public struct AutomationTriggerHook: Codable, Hashable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         filter = try container.decodeIfPresent(AutomationEventFilter.self, forKey: .filter)
-        hookID = try container.decode(String.self, forKey: .hookID)
+        hookID = try container.decodeIfPresent(String.self, forKey: .hookID)
         kind = try container.decode(String.self, forKey: .kind)
     }
 

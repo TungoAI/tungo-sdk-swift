@@ -4,7 +4,7 @@ import Foundation
 
 /// Вопрос ИИ-бухгалтеру
 public struct ChatMessageRequest: Codable, Hashable, Sendable {
-    /// Файлы к вопросу. До 5 файлов, каждый до 10 МБ, все вместе до 14 МБ (до кодирования в base64). Картинка — до 5 МБ, PDF — до 100 страниц. Форматы (по расширению имени): .pdf, .jpg, .jpeg, .png, .webp, .docx, .xlsx, .xls, .csv, .txt. Содержимое должно совпадать с расширением; иначе, как и при превышении пределов, — 400 с текстом причины
+    /// Файлы к вопросу. До 5 файлов, каждый до 10 МБ, все вместе до 14 МБ (до кодирования в base64). Картинка — до 5 МБ, PDF — до 100 страниц. Форматы (по расширению имени): .pdf, .jpg, .jpeg, .png, .webp, .svg, .docx, .doc, .xlsx, .xls, .csv, .txt, .zip, .rar, .7z. Архив (.zip, .rar, .7z) — 1 на сообщение, до 100 МБ: больше 10 МБ — только загрузкой по частям (POST …/chat/uploads) и ссылкой upload_id; файлы внутри проходят те же проверки, модель видит опись архива. Содержимое должно совпадать с расширением; иначе, как и при превышении пределов, — 400 с текстом причины
     public var attachments: [ChatAttachment]?
     /// Что умеет клиент: ["choice"] — показывать уточняющие вопросы с вариантами (событие choice). Без него ИИ спрашивает обычным текстом
     public var capabilities: [String]?
@@ -16,6 +16,8 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
     ///
     /// `nil` leaves the field out, `.null` sends an explicit null.
     public var effort: Nullable<ChatMessageRequestEffort>?
+    /// false — разговор «без памяти»: ИИ не видит, что запомнил раньше, ничего не запоминает и не ищет по прошлым разговорам, а сам разговор не попадает в поиск. Действует только в первом сообщении нового разговора и не меняется до его конца; по умолчанию true
+    public var memory: Bool?
     /// Упоминания через «@» в этом вопросе, до 10: ИИ получит их вместе с вопросом. Каждое проверяется на доступ: нет объекта в этой компании или нет права его видеть — 404 (error.code = mention_not_found, error.index — номер в списке), ход не начинается. Неверная форма — 400 (error.code = mentions_invalid)
     public var mentions: [ChatMention]?
     /// Вопрос человека, до 4000 знаков; можно не писать, если приложены файлы
@@ -40,6 +42,7 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         capabilities: [String]? = nil,
         dialogID: Nullable<String>? = nil,
         effort: Nullable<ChatMessageRequestEffort>? = nil,
+        memory: Bool? = nil,
         mentions: [ChatMention]? = nil,
         message: String? = nil,
         mode: ChatMessageRequestMode? = nil,
@@ -52,6 +55,7 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         self.capabilities = capabilities
         self.dialogID = dialogID
         self.effort = effort
+        self.memory = memory
         self.mentions = mentions
         self.message = message
         self.mode = mode
@@ -66,6 +70,7 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         case capabilities
         case dialogID = "dialog_id"
         case effort
+        case memory
         case mentions
         case message
         case mode
@@ -81,6 +86,7 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         capabilities = try container.decodeIfPresent([String].self, forKey: .capabilities)
         dialogID = container.contains(.dialogID) ? try container.decode(Nullable<String>.self, forKey: .dialogID) : nil
         effort = container.contains(.effort) ? try container.decode(Nullable<ChatMessageRequestEffort>.self, forKey: .effort) : nil
+        memory = try container.decodeIfPresent(Bool.self, forKey: .memory)
         mentions = try container.decodeIfPresent([ChatMention].self, forKey: .mentions)
         message = try container.decodeIfPresent(String.self, forKey: .message)
         mode = try container.decodeIfPresent(ChatMessageRequestMode.self, forKey: .mode)
@@ -96,6 +102,7 @@ public struct ChatMessageRequest: Codable, Hashable, Sendable {
         try container.encodeIfPresent(capabilities, forKey: .capabilities)
         try container.encodeIfPresent(dialogID, forKey: .dialogID)
         try container.encodeIfPresent(effort, forKey: .effort)
+        try container.encodeIfPresent(memory, forKey: .memory)
         try container.encodeIfPresent(mentions, forKey: .mentions)
         try container.encodeIfPresent(message, forKey: .message)
         try container.encodeIfPresent(mode, forKey: .mode)

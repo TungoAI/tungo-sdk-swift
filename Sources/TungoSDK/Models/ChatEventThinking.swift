@@ -2,32 +2,49 @@
 
 import Foundation
 
-/// Размышление модели (по-русски), кусками — можно показать свёрнутым блоком
+/// Размышление модели кусками — можно показать свёрнутым блоком. Блок не по-русски приходит целиком в конце блока: original и translate_id
 public struct ChatEventThinking: Codable, Hashable, Sendable {
-    /// Новый кусок размышления
+    /// Новый кусок размышления по-русски; у блока не по-русски — пометка «Обдумываю…» (пусто, если она уже стоит)
     public var delta: String
+    /// Блок не по-русски целиком, как его написала модель
+    public var original: String?
+    /// id блока для перевода: POST …/chat/{id}/thinking/{translate_id}/translate — после ответа, когда человек раскрыл шаги
+    public var translateID: String?
     /// Вид события: thinking
     public var type: String
 
-    public init(delta: String, type: String = "thinking") {
+    public init(
+        delta: String,
+        original: String? = nil,
+        translateID: String? = nil,
+        type: String = "thinking"
+    ) {
         self.delta = delta
+        self.original = original
+        self.translateID = translateID
         self.type = type
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
         case delta
+        case original
+        case translateID = "translate_id"
         case type
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         delta = try container.decode(String.self, forKey: .delta)
+        original = try container.decodeIfPresent(String.self, forKey: .original)
+        translateID = try container.decodeIfPresent(String.self, forKey: .translateID)
         type = try container.decode(String.self, forKey: .type)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(delta, forKey: .delta)
+        try container.encodeIfPresent(original, forKey: .original)
+        try container.encodeIfPresent(translateID, forKey: .translateID)
         try container.encode(type, forKey: .type)
     }
 }

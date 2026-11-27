@@ -14,12 +14,16 @@ public struct UsageRate: Codable, Hashable, Sendable {
     public var effectiveFrom: String
     /// Цена 1 млн входных токенов (вопрос и контекст; токен — кусочек текста) в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var inputPerMtokTiyn: Int64
+    /// Длинный контекст: если вход вызова вместе с кэшем длиннее above_tokens, весь вызов считается по этим ценам (как в прайсе провайдера); null — у модели одна цена
+    public var longContext: UsageRateLongContext?
     /// Модель ИИ: tungo-1-flash, tungo-1, tungo-1-deep (tungo-search — поиск по нормам, tungo-legacy — прежняя)
     public var model: String
     /// Цена 1 млн токенов ответа в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
     public var outputPerMtokTiyn: Int64
     /// Название модели для людей
     public var title: String
+    /// Цена 1000 запросов поиска на официальных сайтах РК (когда нормы нет в базе знаний); 0 — модель не ищет в интернете в тиынах (1 ₸ = 100 тиын; показывать значение / 100 ₸)
+    public var webSearchPer1kTiyn: Int64
 
     public init(
         cacheReadPerMtokTiyn: Int64,
@@ -27,18 +31,22 @@ public struct UsageRate: Codable, Hashable, Sendable {
         cacheWritePerMtokTiyn: Int64,
         effectiveFrom: String,
         inputPerMtokTiyn: Int64,
+        longContext: UsageRateLongContext?,
         model: String,
         outputPerMtokTiyn: Int64,
-        title: String
+        title: String,
+        webSearchPer1kTiyn: Int64
     ) {
         self.cacheReadPerMtokTiyn = cacheReadPerMtokTiyn
         self.cacheWrite1hPerMtokTiyn = cacheWrite1hPerMtokTiyn
         self.cacheWritePerMtokTiyn = cacheWritePerMtokTiyn
         self.effectiveFrom = effectiveFrom
         self.inputPerMtokTiyn = inputPerMtokTiyn
+        self.longContext = longContext
         self.model = model
         self.outputPerMtokTiyn = outputPerMtokTiyn
         self.title = title
+        self.webSearchPer1kTiyn = webSearchPer1kTiyn
     }
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
@@ -47,9 +55,11 @@ public struct UsageRate: Codable, Hashable, Sendable {
         case cacheWritePerMtokTiyn = "cache_write_per_mtok_tiyn"
         case effectiveFrom = "effective_from"
         case inputPerMtokTiyn = "input_per_mtok_tiyn"
+        case longContext = "long_context"
         case model
         case outputPerMtokTiyn = "output_per_mtok_tiyn"
         case title
+        case webSearchPer1kTiyn = "web_search_per_1k_tiyn"
     }
 
     public init(from decoder: Decoder) throws {
@@ -59,9 +69,11 @@ public struct UsageRate: Codable, Hashable, Sendable {
         cacheWritePerMtokTiyn = try container.decode(Int64.self, forKey: .cacheWritePerMtokTiyn)
         effectiveFrom = try container.decode(String.self, forKey: .effectiveFrom)
         inputPerMtokTiyn = try container.decode(Int64.self, forKey: .inputPerMtokTiyn)
+        longContext = try container.decodeIfPresent(UsageRateLongContext.self, forKey: .longContext)
         model = try container.decode(String.self, forKey: .model)
         outputPerMtokTiyn = try container.decode(Int64.self, forKey: .outputPerMtokTiyn)
         title = try container.decode(String.self, forKey: .title)
+        webSearchPer1kTiyn = try container.decode(Int64.self, forKey: .webSearchPer1kTiyn)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -71,8 +83,10 @@ public struct UsageRate: Codable, Hashable, Sendable {
         try container.encode(cacheWritePerMtokTiyn, forKey: .cacheWritePerMtokTiyn)
         try container.encode(effectiveFrom, forKey: .effectiveFrom)
         try container.encode(inputPerMtokTiyn, forKey: .inputPerMtokTiyn)
+        try container.encode(longContext, forKey: .longContext)
         try container.encode(model, forKey: .model)
         try container.encode(outputPerMtokTiyn, forKey: .outputPerMtokTiyn)
         try container.encode(title, forKey: .title)
+        try container.encode(webSearchPer1kTiyn, forKey: .webSearchPer1kTiyn)
     }
 }

@@ -24,8 +24,10 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
     public var role: String
     /// done — ход закончился сам; stopped — нажали «Стоп»; error — ошибка, отказ модели или предел шагов
     public var state: ChatAssistantMessageState
-    /// Размышления модели за ход одним текстом; пусто — не было
+    /// Размышления модели за ход одним текстом; блок не по-русски без перевода — пометкой «Обдумываю…»; пусто — не было
     public var thinking: String
+    /// Те же размышления по блокам: блок не по-русски без перевода — оригиналом с translate_id
+    public var thinkingParts: [ChatThinkingPart]
     /// Номер ответа в разговоре (он же X-Turn-No и средняя часть id): по нему ответ оценивают — PUT …/chat/{id}/messages/{turn}/rating
     public var turnNo: Int64
 
@@ -40,6 +42,7 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         rating: ChatMessageRating?,
         state: ChatAssistantMessageState,
         thinking: String,
+        thinkingParts: [ChatThinkingPart],
         turnNo: Int64,
         role: String = "assistant"
     ) {
@@ -54,6 +57,7 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         self.role = role
         self.state = state
         self.thinking = thinking
+        self.thinkingParts = thinkingParts
         self.turnNo = turnNo
     }
 
@@ -69,6 +73,7 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         case role
         case state
         case thinking
+        case thinkingParts = "thinking_parts"
         case turnNo = "turn_no"
     }
 
@@ -85,6 +90,7 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         role = try container.decode(String.self, forKey: .role)
         state = try container.decode(ChatAssistantMessageState.self, forKey: .state)
         thinking = try container.decode(String.self, forKey: .thinking)
+        thinkingParts = try container.decode([ChatThinkingPart].self, forKey: .thinkingParts)
         turnNo = try container.decode(Int64.self, forKey: .turnNo)
     }
 
@@ -101,6 +107,7 @@ public struct ChatAssistantMessage: Codable, Hashable, Sendable {
         try container.encode(role, forKey: .role)
         try container.encode(state, forKey: .state)
         try container.encode(thinking, forKey: .thinking)
+        try container.encode(thinkingParts, forKey: .thinkingParts)
         try container.encode(turnNo, forKey: .turnNo)
     }
 }

@@ -12,6 +12,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
     public var id: String
     /// Упоминания через «@» в этом вопросе, если были: вид, id и название на момент отправки
     public var mentions: [ChatHistoryMention]?
+    public var onecObject: ChatOnecObject?
     /// Вопрос идущего хода: ответа ещё нет, его дочитывают потоком (GET …/chat/{id}/events?turn=). Только у последнего сообщения
     public var pending: Bool?
     /// Сообщение человека
@@ -25,6 +26,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         text: String,
         attachments: [ChatAttachmentMeta]? = nil,
         mentions: [ChatHistoryMention]? = nil,
+        onecObject: ChatOnecObject? = nil,
         pending: Bool? = nil,
         role: String = "user"
     ) {
@@ -32,6 +34,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         self.attachments = attachments
         self.id = id
         self.mentions = mentions
+        self.onecObject = onecObject
         self.pending = pending
         self.role = role
         self.text = text
@@ -42,6 +45,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         case attachments
         case id
         case mentions
+        case onecObject = "onec_object"
         case pending
         case role
         case text
@@ -53,6 +57,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         attachments = try container.decodeIfPresent([ChatAttachmentMeta].self, forKey: .attachments)
         id = try container.decode(String.self, forKey: .id)
         mentions = try container.decodeIfPresent([ChatHistoryMention].self, forKey: .mentions)
+        onecObject = try container.decodeIfPresent(ChatOnecObject.self, forKey: .onecObject)
         pending = try container.decodeIfPresent(Bool.self, forKey: .pending)
         role = try container.decode(String.self, forKey: .role)
         text = try container.decode(String.self, forKey: .text)
@@ -64,6 +69,7 @@ public struct ChatUserMessage: Codable, Hashable, Sendable {
         try container.encodeIfPresent(attachments, forKey: .attachments)
         try container.encode(id, forKey: .id)
         try container.encodeIfPresent(mentions, forKey: .mentions)
+        try container.encodeIfPresent(onecObject, forKey: .onecObject)
         try container.encodeIfPresent(pending, forKey: .pending)
         try container.encode(role, forKey: .role)
         try container.encode(text, forKey: .text)

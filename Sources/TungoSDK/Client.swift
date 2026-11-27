@@ -8,7 +8,7 @@ import FoundationNetworking
 /// The version of the SDK.
 public enum TungoSDKInfo {
     /// The version of this package (also sent in the `User-Agent` header).
-    public static let version = "0.3.0" // x-release-version
+    public static let version = "1.0.0" // x-release-version
     /// The value of the `User-Agent` header.
     public static let userAgent = "tungo-sdk-swift/" + version
     /// The production API host used when no base URL is configured.
@@ -118,6 +118,10 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
     public let onec: OnecResource
     /// Автоматизации компании: входящие хуки, сценарии, цепочки шагов, запуски и уровень автономности ИИ
     public let automations: AutomationsResource
+    /// Публичная проверка электронной подписи документов Tungo: по коду, по файлу, по блоку QR и ключи подписи (без ключа API)
+    public let verification: VerificationResource
+    /// Публичный список загрузок: расширение 1С и Tungo Connector (без ключа API)
+    public let releases: ReleasesResource
 
     /// Creates a client.
     ///
@@ -185,6 +189,8 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
         self.forms = FormsResource(core: core)
         self.onec = OnecResource(core: core)
         self.automations = AutomationsResource(core: core)
+        self.verification = VerificationResource(core: core)
+        self.releases = ReleasesResource(core: core)
     }
 
     /// For tests: a client over an existing core.
@@ -203,6 +209,8 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
         self.forms = FormsResource(core: core)
         self.onec = OnecResource(core: core)
         self.automations = AutomationsResource(core: core)
+        self.verification = VerificationResource(core: core)
+        self.releases = ReleasesResource(core: core)
     }
 
     /// The API host requests are sent to.

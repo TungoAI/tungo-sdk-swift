@@ -220,6 +220,85 @@ public struct ChatResource: Sendable {
         return try await core.send(spec, options: options, as: ChatTokenCount.self)
     }
 
+    /// Файлы от ИИ в своих разговорах, новые сверху
+    ///
+    /// Excel, Word, PDF и CSV, которые ИИ собрал в разговорах компании (событие file). Видно то же, что можно скачать: только файлы своих разговоров — чужие не видны никому, даже владельцу; по ключу API — разговоры самого ключа. Разговор стёрт или истёк срок хранения — его файлов нет. Файл разговора, у которого ещё идёт первый ход, появится, когда ход запишется. Страницы курсором.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/chat/files` - permission `chat.use`
+    ///
+    /// Returns one page. Use `listFilesAll` to iterate over every item.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - cursor: next_cursor прошлой страницы; без него — самые новые файлы. Фильтры — те же, что у первой страницы
+    ///   - dialogID: Только из этого разговора
+    ///   - format: Только этого формата: xlsx, docx, pdf или csv
+    ///   - limit: Сколько на странице: 1–200, по умолчанию 50
+    ///   - q: Подстрока имени файла, без учёта регистра
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: One page; `nextPage()` fetches the following one.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func listFiles(
+        companyID: String? = nil,
+        cursor: String? = nil,
+        dialogID: String? = nil,
+        format: ListCompanyChatFilesFormat? = nil,
+        limit: Int? = nil,
+        q: String? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> Page<ChatFileList> {
+        let core = self.core
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/files"
+        return try await core.page(cursor: cursor, options: options) { pageCursor in
+            var query = QueryBuilder()
+            query.add("cursor", pageCursor)
+            query.add("dialog_id", dialogID)
+            query.add("format", format)
+            query.add("limit", limit)
+            query.add("q", q)
+            let spec = RequestSpec(method: "GET", path: path, query: query)
+            return spec
+        }
+    }
+
+    /// Файлы от ИИ в своих разговорах, новые сверху
+    ///
+    /// Excel, Word, PDF и CSV, которые ИИ собрал в разговорах компании (событие file). Видно то же, что можно скачать: только файлы своих разговоров — чужие не видны никому, даже владельцу; по ключу API — разговоры самого ключа. Разговор стёрт или истёк срок хранения — его файлов нет. Файл разговора, у которого ещё идёт первый ход, появится, когда ход запишется. Страницы курсором.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/chat/files` - permission `chat.use`
+    ///
+    /// Iterates over every item, requesting further pages only when they are needed. Filters are carried over to every page; `cursor` is where the iteration starts.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - cursor: next_cursor прошлой страницы; без него — самые новые файлы. Фильтры — те же, что у первой страницы
+    ///   - dialogID: Только из этого разговора
+    ///   - format: Только этого формата: xlsx, docx, pdf или csv
+    ///   - limit: Сколько на странице: 1–200, по умолчанию 50
+    ///   - q: Подстрока имени файла, без учёта регистра
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: A lazy `AsyncSequence` of items.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func listFilesAll(
+        companyID: String? = nil,
+        cursor: String? = nil,
+        dialogID: String? = nil,
+        format: ListCompanyChatFilesFormat? = nil,
+        limit: Int? = nil,
+        q: String? = nil,
+        options: RequestOptions = RequestOptions()
+    ) -> PageSequence<ChatFileList> {
+        PageSequence { try await self.listFiles(companyID: companyID, cursor: cursor, dialogID: dialogID, format: format, limit: limit, q: q, options: options) }
+    }
+
     /// Что можно упомянуть через «@»
     ///
     /// Поиск для списка упоминаний в поле ввода. Находит только то, что человек вправе открыть: предложения и задания — по праву company.read (задания — всех авторов компании; по ключу API — только начатые этим ключом), контрагентов — в 1С этой компании. Модель не вызывается.
@@ -390,6 +469,166 @@ public struct ChatResource: Sendable {
         query.add("lang", lang)
         let spec = RequestSpec(method: "GET", path: path, query: query)
         return try await core.send(spec, options: options, as: ChatSuggestions.self)
+    }
+
+    /// Начать загрузку архива к сообщению
+    ///
+    /// Архив (.zip, .rar, .7z) до 100 МБ одним телом не проходит (предел тела у прокси), поэтому — по частям: начать здесь, прислать части PUT …/parts/{n}, затем отправить сообщение с attachments: [{ "upload_id": "…" }]. Ход, принявший архив, удаляет загрузку; брошенная удаляется по сроку. Видит загрузку только тот, кто её начал (человек или ключ), в этой компании; одновременно — до 3 загрузок. Лимит тарифа проверяется сразу (402/429, как у сообщения). error.code: upload_part_invalid (имя не архива, размер), file_too_large, too_many_uploads (429), uploads_unavailable (503).
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `POST /v1/companies/{co}/chat/uploads` - permission `chat.use`
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - body: The request body.
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The decoded response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func createUpload(
+        companyID: String? = nil,
+        body: ChatUploadCreate,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> ChatUpload {
+        try await createUploadWithResponse(companyID: companyID, body: body, options: options).value
+    }
+
+    /// Начать загрузку архива к сообщению
+    ///
+    /// Архив (.zip, .rar, .7z) до 100 МБ одним телом не проходит (предел тела у прокси), поэтому — по частям: начать здесь, прислать части PUT …/parts/{n}, затем отправить сообщение с attachments: [{ "upload_id": "…" }]. Ход, принявший архив, удаляет загрузку; брошенная удаляется по сроку. Видит загрузку только тот, кто её начал (человек или ключ), в этой компании; одновременно — до 3 загрузок. Лимит тарифа проверяется сразу (402/429, как у сообщения). error.code: upload_part_invalid (имя не архива, размер), file_too_large, too_many_uploads (429), uploads_unavailable (503).
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `POST /v1/companies/{co}/chat/uploads` - permission `chat.use`
+    ///
+    /// The same call as `createUpload`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - body: The request body.
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func createUploadWithResponse(
+        companyID: String? = nil,
+        body: ChatUploadCreate,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<ChatUpload> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/uploads"
+        var spec = RequestSpec(method: "POST", path: path)
+        spec.body = try core.encode(body)
+        return try await core.send(spec, options: options, as: ChatUpload.self)
+    }
+
+    /// Отменить загрузку архива
+    ///
+    /// Части удаляются сразу. Нет такой загрузки (устарела, уже отправлена, чужая) — 404 с error.code = upload_not_found.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `DELETE /v1/companies/{co}/chat/uploads/{upload}` - permission `chat.use`
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - upload: id загрузки (upl_…)
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func deleteUpload(
+        companyID: String? = nil,
+        upload: String,
+        options: RequestOptions = RequestOptions()
+    ) async throws {
+        _ = try await deleteUploadWithResponse(companyID: companyID, upload: upload, options: options)
+    }
+
+    /// Отменить загрузку архива
+    ///
+    /// Части удаляются сразу. Нет такой загрузки (устарела, уже отправлена, чужая) — 404 с error.code = upload_not_found.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `DELETE /v1/companies/{co}/chat/uploads/{upload}` - permission `chat.use`
+    ///
+    /// The same call as `deleteUpload`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - upload: id загрузки (upl_…)
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func deleteUploadWithResponse(
+        companyID: String? = nil,
+        upload: String,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<EmptyResponse> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/uploads/" + (try PercentEncoding.pathSegment(upload, name: "upload"))
+        let spec = RequestSpec(method: "DELETE", path: path)
+        return try await core.sendEmpty(spec, options: options)
+    }
+
+    /// Часть архива
+    ///
+    /// Тело — сырые байты части (Content-Type: application/octet-stream), ровно part_bytes (8388608), у последней — остаток. Части — в любом порядке и параллельно; повтор той же части заменяет её. error.code: upload_part_invalid (номер или размер), payload_too_large, upload_not_found (404: устарела, отменена, чужая).
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `PUT /v1/companies/{co}/chat/uploads/{upload}/parts/{n}` - permission `chat.use`
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - upload: id загрузки (upl_…)
+    ///   - n: Номер части с 0
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The decoded response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func putUploadPart(
+        companyID: String? = nil,
+        upload: String,
+        n: String,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> ChatUploadPart {
+        try await putUploadPartWithResponse(companyID: companyID, upload: upload, n: n, options: options).value
+    }
+
+    /// Часть архива
+    ///
+    /// Тело — сырые байты части (Content-Type: application/octet-stream), ровно part_bytes (8388608), у последней — остаток. Части — в любом порядке и параллельно; повтор той же части заменяет её. error.code: upload_part_invalid (номер или размер), payload_too_large, upload_not_found (404: устарела, отменена, чужая).
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `PUT /v1/companies/{co}/chat/uploads/{upload}/parts/{n}` - permission `chat.use`
+    ///
+    /// The same call as `putUploadPart`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - upload: id загрузки (upl_…)
+    ///   - n: Номер части с 0
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func putUploadPartWithResponse(
+        companyID: String? = nil,
+        upload: String,
+        n: String,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<ChatUploadPart> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/uploads/" + (try PercentEncoding.pathSegment(upload, name: "upload")) + "/parts/" + (try PercentEncoding.pathSegment(n, name: "n"))
+        let spec = RequestSpec(method: "PUT", path: path)
+        return try await core.send(spec, options: options, as: ChatUploadPart.self)
     }
 
     /// Разговор целиком
@@ -945,5 +1184,61 @@ public struct ChatResource: Sendable {
         let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/stop"
         let spec = RequestSpec(method: "POST", path: path)
         return try await core.send(spec, options: options, as: ChatStopResult.self)
+    }
+
+    /// Перевести размышление на русский
+    ///
+    /// Модель часто рассуждает по-английски. Блок не по-русски приходит оригиналом с translate_id (событие thinking и thinking_parts истории); перевод — этим запросом, когда человек раскрыл шаги ответа. Перевод — вызов модели за счёт того же человека и с теми же лимитами, что ход (402/429 — как у POST …/chat); переведённый блок запоминается в разговоре — повторный запрос бесплатен (cached: true). Блок идущего хода в разговор ещё не записан — 404, повторить после ответа; перевод не получился — 503, повторить позже. Только свой разговор, как GET …/chat/{id}.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `POST /v1/companies/{co}/chat/{id}/thinking/{tid}/translate` - permission `chat.use`
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+    ///   - tid: id блока размышления не по-русски (16 hex): тот же в событии thinking и в истории
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The decoded response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func translateThinking(
+        companyID: String? = nil,
+        id: String,
+        tid: String,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> ChatThinkingTranslation {
+        try await translateThinkingWithResponse(companyID: companyID, id: id, tid: tid, options: options).value
+    }
+
+    /// Перевести размышление на русский
+    ///
+    /// Модель часто рассуждает по-английски. Блок не по-русски приходит оригиналом с translate_id (событие thinking и thinking_parts истории); перевод — этим запросом, когда человек раскрыл шаги ответа. Перевод — вызов модели за счёт того же человека и с теми же лимитами, что ход (402/429 — как у POST …/chat); переведённый блок запоминается в разговоре — повторный запрос бесплатен (cached: true). Блок идущего хода в разговор ещё не записан — 404, повторить после ответа; перевод не получился — 503, повторить позже. Только свой разговор, как GET …/chat/{id}.
+    ///
+    /// Доступ: chat.use.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `POST /v1/companies/{co}/chat/{id}/thinking/{tid}/translate` - permission `chat.use`
+    ///
+    /// The same call as `translateThinking`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
+    ///   - tid: id блока размышления не по-русски (16 hex): тот же в событии thinking и в истории
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func translateThinkingWithResponse(
+        companyID: String? = nil,
+        id: String,
+        tid: String,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<ChatThinkingTranslation> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/thinking/" + (try PercentEncoding.pathSegment(tid, name: "tid")) + "/translate"
+        let spec = RequestSpec(method: "POST", path: path)
+        return try await core.send(spec, options: options, as: ChatThinkingTranslation.self)
     }
 }

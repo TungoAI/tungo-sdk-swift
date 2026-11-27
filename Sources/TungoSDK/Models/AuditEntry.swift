@@ -23,12 +23,15 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `company.onec_connector_rotated` — Ключ программы в офисе заменён
     /// - `company.onec_connector_rotate_refused` — Отказ в повторе смены ключа программы в офисе: прежний ключ без метки той смены
     /// - `company.onec_connector_revoked` — Программа в офисе отвязана
+    /// - `company.onec_connector_unpaired` — Программа в офисе отключена на самом компьютере
+    /// - `company.onec_connector_replaced` — Программа в офисе заменена новой привязкой: прежний компьютер отключён
     /// - `company.onec_connector_link_approved` — Привязка программы в офисе одобрена в кабинете
     /// - `connector.link_created` — Программа в офисе запросила привязку через браузер
     /// - `connector.link_denied` — Привязка программы в офисе отклонена
     /// - `company.onec_link_approved` — Вход в Tungo из 1С подтверждён
     /// - `company.onec_link_revoked` — Вход в Tungo из 1С отозван
     /// - `onec_link.wrong_match` — Вход в Tungo из 1С отменён: на сайте нажато не то число сверки
+    /// - `onec_link.limit_refused` — Вход в Tungo из 1С не подтверждён: у аккаунта слишком много действующих входов из 1С
     /// - `company.profile_rebuild` — Справка о компании пересобрана
     /// - `workspace.member_joined` — Сотрудник вступил в организацию
     /// - `workspace.member_role_changed` — Роль сотрудника в организации изменена
@@ -86,6 +89,7 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `workspace.training_consent` — Согласие на обучение изменено (владелец)
     /// - `workspace.audit_exported` — Журнал организации выгружен
     /// - `workspace.compliance_updated` — Выгрузка для проверок включена или выключена
+    /// - `workspace.card_payments_updated` — Оплата счетов Enterprise картой включена или выключена
     /// - `workspace.compliance_read` — Прочитаны разговоры через выгрузку для проверок
     /// - `api_key.created` — Выпущен ключ API
     /// - `api_key.updated` — Ключ API изменён
@@ -112,6 +116,10 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `subscription.changed` — Тариф изменён
     /// - `subscription.cancel_scheduled` — Подписка отменена с конца периода
     /// - `subscription.resumed` — Отмена подписки снята
+    /// - `subscription.terminated` — Подписка закрыта сразу (одобрен возврат по заявке)
+    /// - `billing.refund_request.submitted` — Подана заявка на возврат
+    /// - `billing.refund_request.approved` — Заявка на возврат одобрена
+    /// - `billing.refund_request.rejected` — Заявка на возврат отклонена
     /// - `extra_usage.configured` — Настройки доп. использования изменены
     /// - `extra_usage.adjusted` — Баланс доп. использования скорректирован
     /// - `platform.configured` — Настройки платформы изменены
@@ -163,11 +171,13 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `usage.limit_reset_applied` — Применён сброс лимита
     /// - `referral.claimed` — Регистрация по приглашению друга
     /// - `referral.rewarded` — За приглашённого друга выдан сброс лимита
+    /// - `referral.reward_revoked` — Сброс лимита за оплату приглашённого друга отозван: оплата возвращена
     /// - `admin.enterprise_request.status_changed` — Статус заявки Enterprise изменён (платформа)
     /// - `admin.training.exported` — Выгрузка для обучения (платформа)
     /// - `admin.setting.changed` — Настройка платформы изменена
     /// - `admin.logs.purged` — Журнал запросов и итогов ходов ИИ убран вручную (платформа)
     /// - `admin.dialog.pd_viewed` — Поддержка открыла разговор с персональными данными
+    /// - `admin.dialog.viewed_without_consent` — Поддержка открыла разговор без согласия клиента (экстренный доступ)
     /// - `admin.dialog.rating_comments_viewed` — Поддержка открыла комментарии человека к оценкам разговора
     /// - `admin.dialog.label_set` — Оценка ответа для обучения поставлена или заменена (платформа)
     /// - `admin.dialog.label_removed` — Оценка ответа для обучения удалена (платформа)
@@ -192,6 +202,10 @@ public struct AuditEntry: Codable, Hashable, Sendable {
     /// - `admin.support.note_added` — Поддержка добавила внутреннюю заметку к обращению
     /// - `admin.support.ticket_updated` — Поддержка изменила обращение: состояние, категорию, приоритет или исполнителя
     /// - `admin.support.attachment_viewed` — Поддержка скачала вложение обращения
+    /// - `admin.staff_access.granted` — Доступы: сотруднику открыты служебные службы (Cloudflare Access, учётки внутри) (платформа)
+    /// - `admin.staff_access.revoked` — Доступы: у сотрудника забраны служебные службы, сессии Access отозваны (платформа)
+    /// - `admin.staff_access.retried` — Доступы: повторены несделанные шаги выдачи или отзыва (платформа)
+    /// - `admin.staff_access.mail_resent` — Доступы: письмо сотруднику отправлено ещё раз (платформа)
     /// - `canary.triggered` — Сработала приманка: украденный ключ или почта «сотрудника» (платформа)
     /// - `billing.payment.new` — Платёж: создан
     /// - `billing.payment.pending` — Платёж: отправлен в банк

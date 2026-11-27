@@ -306,12 +306,19 @@ final class MockServer: @unchecked Sendable {
             }
             log.append(request)
             let scripted = queue.isEmpty ? nil : queue.removeFirst()
+            // A reset comes next: this answer ends the connection (Connection: close), so the
+            // reset request goes over a new one. On Linux, URLSession (libcurl) resends a request
+            // whose reused keep-alive connection dropped without an answer, and it cannot rewind
+            // a request body for that: a POST would hang. A drop on a fresh connection is
+            // reported to the SDK, which is what the reset tests exercise.
+            let resetNext = queue.first?.reset == true
             let handler = fallback
             lock.unlock()
-            let response = scripted ?? handler(request)
+            var response = scripted ?? handler(request)
             if response.delay > 0, !wait(client, response.delay) { return }
             if response.reset { return }
-            if !send(response, to: client) { return }
+            if resetNext { response.headers["Connection"] = "close" }
+            if !send(response, to: client) || resetNext { return }
         }
     }
 

@@ -6,6 +6,7 @@ import Foundation
 
 extension BatchJobList: CursorPageBody {}
 extension ChatDialogList: CursorPageBody {}
+extension ChatFileList: CursorPageBody {}
 extension EsfIncomingReport: CursorPageBody {}
 extension EsfOutgoingReport: CursorPageBody {}
 extension FeedPage: CursorPageBody {}

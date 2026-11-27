@@ -13,6 +13,8 @@ public struct ChatDialog: Codable, Hashable, Sendable {
     public var id: String
     /// Сколько персональных данных (БИН, ИИН, имён, счетов) замаскировано в разговоре перед отправкой модели — для значка «данные скрыты»
     public var masked: Double
+    /// false — разговор «без памяти» (выбран при создании): без памяти ИИ и поиска по прошлым разговорам — показать пометку в шапке
+    public var memory: Bool
     /// Сколько сообщений в messages
     public var messageCount: Double
     /// Сообщения от старых к новым
@@ -37,6 +39,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         createdAt: String,
         id: String,
         masked: Double,
+        memory: Bool,
         messageCount: Double,
         messages: [ChatMessage],
         pdRestored: Bool,
@@ -55,6 +58,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         self.createdAt = createdAt
         self.id = id
         self.masked = masked
+        self.memory = memory
         self.messageCount = messageCount
         self.messages = messages
         self.pdRestored = pdRestored
@@ -73,6 +77,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         case createdAt = "created_at"
         case id
         case masked
+        case memory
         case messageCount = "message_count"
         case messages
         case pdRestored = "pd_restored"
@@ -92,6 +97,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         createdAt = try container.decode(String.self, forKey: .createdAt)
         id = try container.decode(String.self, forKey: .id)
         masked = try container.decode(Double.self, forKey: .masked)
+        memory = try container.decode(Bool.self, forKey: .memory)
         messageCount = try container.decode(Double.self, forKey: .messageCount)
         messages = try container.decode([ChatMessage].self, forKey: .messages)
         pdRestored = try container.decode(Bool.self, forKey: .pdRestored)
@@ -111,6 +117,7 @@ public struct ChatDialog: Codable, Hashable, Sendable {
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(id, forKey: .id)
         try container.encode(masked, forKey: .masked)
+        try container.encode(memory, forKey: .memory)
         try container.encode(messageCount, forKey: .messageCount)
         try container.encode(messages, forKey: .messages)
         try container.encode(pdRestored, forKey: .pdRestored)
