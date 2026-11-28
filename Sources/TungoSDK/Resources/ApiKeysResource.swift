@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Сведения о текущем ключе API и статистика его расхода
+/// Сведения о текущем ключе API: права, срок, траты месяца и почему вызовы не пройдут
 ///
 /// Reach it through ``TungoClient/apiKeys``.
 public struct ApiKeysResource: Sendable {
@@ -42,119 +42,5 @@ public struct ApiKeysResource: Sendable {
         let path = "/v1/api-key"
         let spec = RequestSpec(method: "GET", path: path)
         return try await core.send(spec, options: options, as: ApiKeySelf.self)
-    }
-
-    /// Расход ключа, по которому пришёл запрос
-    ///
-    /// Только по ключу API; как GET /v1/workspaces/{ws}/api-keys/{id}/usage.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/api-key/usage`
-    ///
-    /// - Parameters:
-    ///   - from: Начало периода, ISO 8601 (включительно). Нет — 1-е число текущего месяца, 00:00 по Алматы An RFC 3339 date-time.
-    ///   - to: Конец периода, ISO 8601 (не включительно); позже from и не дальше 400 дней от него. Нет — сейчас An RFC 3339 date-time.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getCurrentUsage(
-        from: String? = nil,
-        to: String? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ApiKeyUsage {
-        try await getCurrentUsageWithResponse(from: from, to: to, options: options).value
-    }
-
-    /// Расход ключа, по которому пришёл запрос
-    ///
-    /// Только по ключу API; как GET /v1/workspaces/{ws}/api-keys/{id}/usage.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/api-key/usage`
-    ///
-    /// The same call as `getCurrentUsage`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - from: Начало периода, ISO 8601 (включительно). Нет — 1-е число текущего месяца, 00:00 по Алматы An RFC 3339 date-time.
-    ///   - to: Конец периода, ISO 8601 (не включительно); позже from и не дальше 400 дней от него. Нет — сейчас An RFC 3339 date-time.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getCurrentUsageWithResponse(
-        from: String? = nil,
-        to: String? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ApiKeyUsage> {
-        let path = "/v1/api-key/usage"
-        var query = QueryBuilder()
-        query.add("from", from)
-        query.add("to", to)
-        let spec = RequestSpec(method: "GET", path: path, query: query)
-        return try await core.send(spec, options: options, as: ApiKeyUsage.self)
-    }
-
-    /// Расход ключа за период
-    ///
-    /// По умолчанию — с начала текущего месяца по Алматы до сейчас; период не больше 400 дней. По ключу API — только расход самого этого ключа (:id — его id).
-    ///
-    /// Доступ: Владелец или админ workspace; по ключу — свой.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/workspaces/{ws}/api-keys/{id}/usage` - permission `Владелец или админ workspace; по ключу — свой`
-    ///
-    /// - Parameters:
-    ///   - workspaceID: The workspace; the client's `workspaceID` when `nil`.
-    ///   - id: id ключа (key_…)
-    ///   - from: Начало периода, ISO 8601 (включительно). Нет — 1-е число текущего месяца, 00:00 по Алматы An RFC 3339 date-time.
-    ///   - to: Конец периода, ISO 8601 (не включительно); позже from и не дальше 400 дней от него. Нет — сейчас An RFC 3339 date-time.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getUsage(
-        workspaceID: String? = nil,
-        id: String,
-        from: String? = nil,
-        to: String? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ApiKeyUsage {
-        try await getUsageWithResponse(workspaceID: workspaceID, id: id, from: from, to: to, options: options).value
-    }
-
-    /// Расход ключа за период
-    ///
-    /// По умолчанию — с начала текущего месяца по Алматы до сейчас; период не больше 400 дней. По ключу API — только расход самого этого ключа (:id — его id).
-    ///
-    /// Доступ: Владелец или админ workspace; по ключу — свой.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/workspaces/{ws}/api-keys/{id}/usage` - permission `Владелец или админ workspace; по ключу — свой`
-    ///
-    /// The same call as `getUsage`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - workspaceID: The workspace; the client's `workspaceID` when `nil`.
-    ///   - id: id ключа (key_…)
-    ///   - from: Начало периода, ISO 8601 (включительно). Нет — 1-е число текущего месяца, 00:00 по Алматы An RFC 3339 date-time.
-    ///   - to: Конец периода, ISO 8601 (не включительно); позже from и не дальше 400 дней от него. Нет — сейчас An RFC 3339 date-time.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getUsageWithResponse(
-        workspaceID: String? = nil,
-        id: String,
-        from: String? = nil,
-        to: String? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ApiKeyUsage> {
-        let path = "/v1/workspaces/" + (try core.workspaceSegment(workspaceID)) + "/api-keys/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/usage"
-        var query = QueryBuilder()
-        query.add("from", from)
-        query.add("to", to)
-        let spec = RequestSpec(method: "GET", path: path, query: query)
-        return try await core.send(spec, options: options, as: ApiKeyUsage.self)
     }
 }

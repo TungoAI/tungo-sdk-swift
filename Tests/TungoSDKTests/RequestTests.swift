@@ -26,19 +26,19 @@ final class RequestTests: MockTestCase {
     }
 
     func testPublicOperationSendsNoKey() async throws {
-        server.enqueue(.json(200, Fixture.usageRates))
+        server.enqueue(.json(200, Fixture.verifyKeys))
         let client = makeClient()
-        _ = try await client.platform.listUsageRates()
+        _ = try await client.verification.listKeys()
         let request = try XCTUnwrap(server.requests.first)
-        XCTAssertEqual(request.path, "/v1/usage-rates")
+        XCTAssertEqual(request.path, "/v1/public/verify-keys")
         XCTAssertNil(request.headers["x-api-key"])
         XCTAssertNil(request.headers["authorization"])
     }
 
     func testPublicOperationWorksWithoutKey() async throws {
-        server.enqueue(.json(200, Fixture.usageRates))
+        server.enqueue(.json(200, Fixture.verifyKeys))
         let client = makeClient(apiKey: nil)
-        _ = try await client.platform.listUsageRates()
+        _ = try await client.verification.listKeys()
         XCTAssertEqual(server.requests.count, 1)
     }
 

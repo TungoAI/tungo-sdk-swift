@@ -278,6 +278,66 @@ public struct ProposalsResource: Sendable {
         return try await core.send(spec, options: options, as: ProposalDecision.self)
     }
 
+    /// Скачать документ файлом
+    ///
+    /// Карточка предложения таблицей: лист «Документ» — реквизиты, лист «Строки» — товары и услуги, лист «Проводки» — ожидаемые и (у записанного) фактические. Ответ — сам файл (Content-Disposition: attachment, имя — латиницей из номера: tungo-….xlsx, .csv или .pdf). Ячейки формулами не становятся: в Excel пишутся только текст и числа, в CSV значение, начинающееся с = + - @, получает апостроф, в PDF всё — текст. Суммы — тенге числом, даты — ГГГГ-ММ-ДД, во всех форматах одинаково.
+    ///
+    /// Доступ: company.read.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/proposals/{id}/export` - permission `company.read`
+    ///
+    /// Downloads a file. The whole file is read into memory; the call sends `Accept: */*`.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: Номер предложения внутри компании: P- и шесть цифр (P-000123). У двух компаний номера могут совпадать
+    ///   - format: Формат файла: xlsx — Excel (все листы); csv — первый лист (UTF-8 с BOM, разделитель — точка с запятой); pdf — все листы разделами на A4 (application/pdf, шрифт вложен: кириллица и казахские буквы). По умолчанию xlsx
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The downloaded file: its bytes, the file name of the `Content-Disposition` header, the `Content-Type` and the request id.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func export(
+        companyID: String? = nil,
+        id: String,
+        format: GetCompanyProposalExportFormat? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> DownloadedFile {
+        try await exportWithResponse(companyID: companyID, id: id, format: format, options: options).value
+    }
+
+    /// Скачать документ файлом
+    ///
+    /// Карточка предложения таблицей: лист «Документ» — реквизиты, лист «Строки» — товары и услуги, лист «Проводки» — ожидаемые и (у записанного) фактические. Ответ — сам файл (Content-Disposition: attachment, имя — латиницей из номера: tungo-….xlsx, .csv или .pdf). Ячейки формулами не становятся: в Excel пишутся только текст и числа, в CSV значение, начинающееся с = + - @, получает апостроф, в PDF всё — текст. Суммы — тенге числом, даты — ГГГГ-ММ-ДД, во всех форматах одинаково.
+    ///
+    /// Доступ: company.read.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/proposals/{id}/export` - permission `company.read`
+    ///
+    /// The same call as `export`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: Номер предложения внутри компании: P- и шесть цифр (P-000123). У двух компаний номера могут совпадать
+    ///   - format: Формат файла: xlsx — Excel (все листы); csv — первый лист (UTF-8 с BOM, разделитель — точка с запятой); pdf — все листы разделами на A4 (application/pdf, шрифт вложен: кириллица и казахские буквы). По умолчанию xlsx
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The downloaded file with the status, headers, request id and rate-limit state of the response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func exportWithResponse(
+        companyID: String? = nil,
+        id: String,
+        format: GetCompanyProposalExportFormat? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<DownloadedFile> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/proposals/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/export"
+        var query = QueryBuilder()
+        query.add("format", format)
+        let spec = RequestSpec(method: "GET", path: path, query: query)
+        return try await core.download(spec, options: options)
+    }
+
     /// Отклонить с причиной
     ///
     /// Отклонить можно предложение в статусе previewed или approved; повтор — repeated: true. Неверный статус — 409 с error.code = wrong_status. Идущая запись того же предложения в 1С дожидается: ответ ждёт её конца и решает по итогу. Одобренное, по которому 1С не ответила на прошлую запись (write_unknown): первые 2 минуты — 409 wrong_status (1С может ещё дописывать документ), потом поиск документа по метке [AI P-…] в 1С — документа нет, отклоняется; нашёлся или 1С не ответила — 409 wrong_status без поля status, причина в error.message. Нашёлся документ с меткой, но шапка другая и не доказано, что он этого предложения, — без confirm_unknown_write тот же 409, с ним (только человек) отклоняется с предупреждением. На снимке базы метку проверить нечем: без confirm_unknown_write — тот же 409; с ним (только человек) — отклоняется с предупреждением «документ мог остаться в 1С» в истории (code rejected_write_unknown) и журнале; сумма автоодобрения при этом освобождается. Отмена, на которую 1С не ответила (revert_unknown), — так же: 2 минуты ожидания, потом проверка документа в 1С; на снимке — только с confirm_unknown_write.

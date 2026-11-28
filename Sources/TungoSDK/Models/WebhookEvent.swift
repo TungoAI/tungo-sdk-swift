@@ -31,10 +31,6 @@ public enum WebhookEvent: Codable, Hashable, Sendable {
     case esfIncomingReceived(WebhookEventEsfIncomingReceived)
     /// `type: "onec.connection.changed"`
     case onecConnectionChanged(WebhookEventOnecConnectionChanged)
-    /// `type: "payment.failed"`
-    case paymentFailed(WebhookEventPaymentFailed)
-    /// `type: "payment.succeeded"`
-    case paymentSucceeded(WebhookEventPaymentSucceeded)
     /// `type: "ping"`
     case ping(WebhookEventPing)
     /// `type: "platform.balance_exhausted"`
@@ -116,16 +112,6 @@ public enum WebhookEvent: Codable, Hashable, Sendable {
                 self = .onecConnectionChanged(value)
                 return
             }
-        case "payment.failed":
-            if let value = try? WebhookEventPaymentFailed(from: decoder) {
-                self = .paymentFailed(value)
-                return
-            }
-        case "payment.succeeded":
-            if let value = try? WebhookEventPaymentSucceeded(from: decoder) {
-                self = .paymentSucceeded(value)
-                return
-            }
         case "ping":
             if let value = try? WebhookEventPing(from: decoder) {
                 self = .ping(value)
@@ -186,8 +172,6 @@ public enum WebhookEvent: Codable, Hashable, Sendable {
         case .chatTurnCompleted(let value): try value.encode(to: encoder)
         case .esfIncomingReceived(let value): try value.encode(to: encoder)
         case .onecConnectionChanged(let value): try value.encode(to: encoder)
-        case .paymentFailed(let value): try value.encode(to: encoder)
-        case .paymentSucceeded(let value): try value.encode(to: encoder)
         case .ping(let value): try value.encode(to: encoder)
         case .platformBalanceExhausted(let value): try value.encode(to: encoder)
         case .platformBalanceLow(let value): try value.encode(to: encoder)
@@ -215,8 +199,6 @@ public enum WebhookEvent: Codable, Hashable, Sendable {
         case .chatTurnCompleted: return "chat.turn.completed"
         case .esfIncomingReceived: return "esf.incoming.received"
         case .onecConnectionChanged: return "onec.connection.changed"
-        case .paymentFailed: return "payment.failed"
-        case .paymentSucceeded: return "payment.succeeded"
         case .ping: return "ping"
         case .platformBalanceExhausted: return "platform.balance_exhausted"
         case .platformBalanceLow: return "platform.balance_low"

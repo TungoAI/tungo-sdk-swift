@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Организации (workspace), доступные ключу API
+/// Организации (workspace), доступные ключу API, и остаток баланса платформы
 ///
 /// Reach it through ``TungoClient/workspaces``.
 public struct WorkspacesResource: Sendable {
@@ -38,5 +38,43 @@ public struct WorkspacesResource: Sendable {
         let path = "/v1/workspaces"
         let spec = RequestSpec(method: "GET", path: path)
         return try await core.send(spec, options: options, as: ListWorkspacesResponse.self)
+    }
+
+    /// Остаток баланса платформы
+    ///
+    /// Сколько денег осталось на балансе платформы организации — только чтение. Владелец и админ по сессии или ключ API, чей создатель всё ещё владелец или админ организации. Почему вызовы по ключу не проходят (баланс, потолок, выключатель) — поле blocked_reason в GET /v1/api-key; о низком балансе сообщают вебхуки platform.balance_low и platform.balance_exhausted.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/workspaces/{ws}/platform/balance`
+    ///
+    /// - Parameters:
+    ///   - workspaceID: The workspace; the client's `workspaceID` when `nil`.
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The decoded response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func getBalance(workspaceID: String? = nil, options: RequestOptions = RequestOptions()) async throws -> PlatformBalance {
+        try await getBalanceWithResponse(workspaceID: workspaceID, options: options).value
+    }
+
+    /// Остаток баланса платформы
+    ///
+    /// Сколько денег осталось на балансе платформы организации — только чтение. Владелец и админ по сессии или ключ API, чей создатель всё ещё владелец или админ организации. Почему вызовы по ключу не проходят (баланс, потолок, выключатель) — поле blocked_reason в GET /v1/api-key; о низком балансе сообщают вебхуки platform.balance_low и platform.balance_exhausted.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/workspaces/{ws}/platform/balance`
+    ///
+    /// The same call as `getBalance`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - workspaceID: The workspace; the client's `workspaceID` when `nil`.
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The response with its status, headers, request id and rate-limit state.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func getBalanceWithResponse(workspaceID: String? = nil, options: RequestOptions = RequestOptions()) async throws -> APIResponse<PlatformBalance> {
+        let path = "/v1/workspaces/" + (try core.workspaceSegment(workspaceID)) + "/platform/balance"
+        let spec = RequestSpec(method: "GET", path: path)
+        return try await core.send(spec, options: options, as: PlatformBalance.self)
     }
 }

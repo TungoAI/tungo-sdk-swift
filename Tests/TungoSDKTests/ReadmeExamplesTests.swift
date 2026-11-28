@@ -36,6 +36,18 @@ private func readmeConfig() async throws {
     print(response.statusCode, response.requestID ?? "-", response.rateLimit?.remaining ?? -1)
 }
 
+private func readmeDownloads() async throws {
+    let client = TungoClient(apiKey: "tg_...", companyID: "co_...")
+
+    let file = try await client.proposals.export(id: "P-000042", format: .pdf)
+    print(file.filename ?? "-", file.contentType ?? "-", file.content.count, file.requestID ?? "-")
+
+    // The name is the server's suggestion: keep only its last path component.
+    let name = file.filename.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "proposal.pdf"
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+    try file.content.write(to: url)
+}
+
 private func readmeErrors() async throws {
     let client = TungoClient(apiKey: "tg_...", companyID: "co_...")
     do {
@@ -185,6 +197,12 @@ final class ReadmeExamplesTests: XCTestCase {
         if path.hasSuffix("/approve") {
             return .json(200, Fixture.decision)
         }
+        if path.hasSuffix("/proposals/P-000042/export") {
+            var file = MockResponse()
+            file.headers = ["Content-Type": "application/pdf", "Content-Disposition": #"attachment; filename="tungo-P-000042.pdf""#]
+            file.body = Data([0x25, 0x50, 0x44, 0x46, 0x2D, 0xFF, 0x00])
+            return file
+        }
         if path.hasSuffix("/proposals/P-000042") {
             return .json(404, Fixture.error(type: "not_found_error", message: "No such proposal"))
         }
@@ -232,6 +250,16 @@ final class ReadmeExamplesTests: XCTestCase {
     func testStreaming() async throws {
         try await readmeStreaming()
         XCTAssertEqual(paths().count, 2)
+    }
+
+    func testDownloads() async throws {
+        try await readmeDownloads()
+        let request = try XCTUnwrap(server?.requests.first)
+        XCTAssertEqual(request.path, "/v1/companies/co_.../proposals/P-000042/export")
+        XCTAssertEqual(request.query, "format=pdf")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("tungo-P-000042.pdf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        XCTAssertEqual(try Data(contentsOf: url), Data([0x25, 0x50, 0x44, 0x46, 0x2D, 0xFF, 0x00]))
     }
 
     func testWebhooks() async throws {

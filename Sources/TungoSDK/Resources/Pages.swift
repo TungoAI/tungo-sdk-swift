@@ -10,10 +10,7 @@ extension ChatFileList: CursorPageBody {}
 extension EsfIncomingReport: CursorPageBody {}
 extension EsfOutgoingReport: CursorPageBody {}
 extension FeedPage: CursorPageBody {}
-extension GetWorkspacePlatformAuditResponse: CursorPageBody {}
-extension GetWorkspacePlatformLedgerResponse: CursorPageBody {}
 extension ListCompanyAutomationsRunsResponse: CursorPageBody {}
-extension ListWorkspacePlatformRequestsResponse: CursorPageBody {}
 extension ListWorkspaceWebhooksEndpointAttemptsResponse: CursorPageBody {}
 extension ListWorkspaceWebhooksEndpointsResponse: CursorPageBody {}
 extension ListWorkspaceWebhooksMessageAttemptsResponse: CursorPageBody {}

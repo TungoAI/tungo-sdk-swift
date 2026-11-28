@@ -15,7 +15,7 @@ final class ErrorAndRetryTests: MockTestCase {
     func testAPIErrorCarriesEverythingTheServerSent() async {
         let body = #"{"type":"error","error":{"type":"invalid_request_error","code":"validation_failed","message":"Поле не заполнено","fields":[{"code":"too_small","message":"нужно","path":"title"}],"resets_at":"2026-12-01"},"request_id":"req_body_9"}"#
         server.enqueue(.json(400, body, headers: ["X-Request-Id": "req_header", "X-RateLimit-Remaining": "0"]))
-        await assertThrows(try await makeClient().chat.update(id: "d1", body: ChatDialogPatch(title: ""))) { error in
+        await assertThrows(try await makeClient().automations.updateHook(id: "h1", body: AutomationHookPatch(name: ""))) { error in
             guard let api = error as? APIError else { return XCTFail("\(error)") }
             XCTAssertEqual(api.statusCode, 400)
             XCTAssertEqual(api.kind, .invalidRequest)

@@ -23,6 +23,7 @@ print(reply.answer)
 - ``TungoClient``
 - ``RequestOptions``
 - ``APIResponse``
+- ``DownloadedFile``
 - ``RateLimit``
 - ``TungoTransport``
 - ``URLSessionTransport``
@@ -31,7 +32,6 @@ print(reply.answer)
 
 - ``WorkspacesResource``
 - ``CompaniesResource``
-- ``PlatformResource``
 - ``ApiKeysResource``
 - ``WebhooksResource``
 - ``ChatResource``
@@ -43,7 +43,6 @@ print(reply.answer)
 - ``OnecResource``
 - ``AutomationsResource``
 - ``VerificationResource``
-- ``ReleasesResource``
 
 ### Errors
 

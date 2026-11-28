@@ -392,4 +392,18 @@ final class ConformanceTests: XCTestCase {
             }
         }
     }
+
+    // MARK: Downloads
+
+    func testContentDisposition() throws {
+        for item in try cases("content_disposition") {
+            let header = item["header"]?.stringValue
+            let wanted = item["expect"]?["filename"]?.stringValue
+            XCTAssertEqual(DownloadedFile.filename(contentDisposition: header), wanted, name(item))
+            // The same header on a response gives the same name.
+            var headers = HTTPHeaders()
+            headers["Content-Disposition"] = header
+            XCTAssertEqual(DownloadedFile(content: Data([0xFF]), headers: headers).filename, wanted, "\(name(item)) (response)")
+        }
+    }
 }

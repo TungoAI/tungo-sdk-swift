@@ -8,7 +8,7 @@ import FoundationNetworking
 /// The version of the SDK.
 public enum TungoSDKInfo {
     /// The version of this package (also sent in the `User-Agent` header).
-    public static let version = "1.0.0" // x-release-version
+    public static let version = "2.0.0" // x-release-version
     /// The value of the `User-Agent` header.
     public static let userAgent = "tungo-sdk-swift/" + version
     /// The production API host used when no base URL is configured.
@@ -92,13 +92,11 @@ public struct EmptyResponse: Sendable, Hashable {
 public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugStringConvertible, CustomReflectable {
     let core: ClientCore
 
-    /// Организации (workspace), доступные ключу API
+    /// Организации (workspace), доступные ключу API, и остаток баланса платформы
     public let workspaces: WorkspacesResource
     /// Компании организации и их карточки
     public let companies: CompaniesResource
-    /// Баланс платформы, книга движений, отчёты о расходе, лимиты, аудит и тарифы моделей
-    public let platform: PlatformResource
-    /// Сведения о текущем ключе API и статистика его расхода
+    /// Сведения о текущем ключе API: права, срок, траты месяца и почему вызовы не пройдут
     public let apiKeys: ApiKeysResource
     /// Исходящие вебхуки организации (Svix): адреса, каталог событий, доставки и проверка подписи
     public let webhooks: WebhooksResource
@@ -120,8 +118,6 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
     public let automations: AutomationsResource
     /// Публичная проверка электронной подписи документов Tungo: по коду, по файлу, по блоку QR и ключи подписи (без ключа API)
     public let verification: VerificationResource
-    /// Публичный список загрузок: расширение 1С и Tungo Connector (без ключа API)
-    public let releases: ReleasesResource
 
     /// Creates a client.
     ///
@@ -178,7 +174,6 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
         self.core = core
         self.workspaces = WorkspacesResource(core: core)
         self.companies = CompaniesResource(core: core)
-        self.platform = PlatformResource(core: core)
         self.apiKeys = ApiKeysResource(core: core)
         self.webhooks = WebhooksResource(core: core)
         self.chat = ChatResource(core: core)
@@ -190,7 +185,6 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
         self.onec = OnecResource(core: core)
         self.automations = AutomationsResource(core: core)
         self.verification = VerificationResource(core: core)
-        self.releases = ReleasesResource(core: core)
     }
 
     /// For tests: a client over an existing core.
@@ -198,7 +192,6 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
         self.core = core
         self.workspaces = WorkspacesResource(core: core)
         self.companies = CompaniesResource(core: core)
-        self.platform = PlatformResource(core: core)
         self.apiKeys = ApiKeysResource(core: core)
         self.webhooks = WebhooksResource(core: core)
         self.chat = ChatResource(core: core)
@@ -210,7 +203,6 @@ public final class TungoClient: Sendable, CustomStringConvertible, CustomDebugSt
         self.onec = OnecResource(core: core)
         self.automations = AutomationsResource(core: core)
         self.verification = VerificationResource(core: core)
-        self.releases = ReleasesResource(core: core)
     }
 
     /// The API host requests are sent to.

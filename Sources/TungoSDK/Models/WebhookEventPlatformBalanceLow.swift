@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Баланс платформы для разработчиков этим списанием опустился ниже порога (настройка платформы platform.billing). Пополнить — POST /v1/workspaces/{ws}/platform/purchases.
+/// Баланс платформы для разработчиков этим списанием опустился ниже порога (настройка платформы platform.billing). Пополняет владелец или админ организации в кабинете (раздел «Платформа»); остаток — GET /v1/workspaces/{ws}/platform/balance.
 public struct WebhookEventPlatformBalanceLow: Codable, Hashable, Sendable {
     /// Компания; null — событие организации (например, оплата) (co_…)
     public var companyID: String?

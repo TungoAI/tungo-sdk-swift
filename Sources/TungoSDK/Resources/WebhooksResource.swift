@@ -469,8 +469,6 @@ public struct WebhooksResource: Sendable {
     /// - `proposal.awaiting_approval` — Предложение (документ для 1С) готово и ждёт одобрения. blocked — есть блокеры, одобрить пока нельзя.
     /// - `proposal.written` — Предложение записано в 1С (документ создан или дополнен). onec_document_number — номер документа в 1С.
     /// - `proposal.failed` — Записать предложение в 1С не удалось. Причина — в карточке предложения (GET /v1/companies/{co}/proposals/{id}).
-    /// - `payment.succeeded` — Оплата Tungo картой прошла (подписка, пополнение, подключение компании). Суммы — в тиынах.
-    /// - `payment.failed` — Оплата Tungo картой не прошла. Суммы — в тиынах.
     /// - `automation.run.completed` — Запуск автоматизации закончился успешно. Итог для внешней системы: proposals — что подготовлено и записано в 1С (сумма, номер и дата документа), output — итог в форме сценария (output). Канал сообщения — id сценария (scn_…): адрес вебхука с channels получает только свои сценарии. Ход и ответ — в журнале запусков (GET /v1/companies/{co}/automations/runs).
     /// - `automation.run.failed` — Запуск автоматизации закончился ошибкой (или его процесс замолчал). Его можно повторить. Сюда же — сбой опроса DirectBank (action: directbank): 1С недоступна, подключение не оплачено, сбой разбора. Каждая попытка — своё событие (attempt).
     /// - `esf.incoming.received` — Входящие ЭСФ получены из ИС ЭСФ и разобраны пачкой (POST /v1/companies/{co}/batch/esf-purchases): сколько ЭСФ и сколько предложений поступления создано.
@@ -481,7 +479,7 @@ public struct WebhooksResource: Sendable {
     /// - `automation.write_unknown` — Автоодобрение по правилу сценария писало документ в 1С, а исход записи неизвестен: 1С не ответила или процесс прервался посреди записи (запуск закрыт как брошенный — и тогда, когда сценарий удалили). Сумма остаётся в дневных потолках, повтор запуска ищет документ по метке [AI P-…] и второго не создаст. Проверьте документ в 1С или нажмите «Записать» в карточке предложения.
     /// - `automation.run.notice` — Шаг notify цепочки сценария: разработчику — что запуск дошёл до уведомления и почему (reason — условие шага: checks_found_issues — проверки нашли ошибки, previous_created_proposals — прошлый шаг подготовил предложения, previous_failed — прошлый шаг упал, always). Только номера и счётчики; подробности — GET /v1/companies/{co}/automations/runs/{id}. Канал сообщения — id сценария (scn_…).
     /// - `chat.turn.completed` — Ход чата по ключу API закончился, история записана. Только по факту хода, начатого ключом; ход из кабинета события не шлёт. Текста ответа и персональных данных в теле нет — ответ читайте по dialog_url. Ответ на вопрос ИИ (stop_reason был awaiting_user) — новое событие с тем же turn_no.
-    /// - `platform.balance_low` — Баланс платформы для разработчиков этим списанием опустился ниже порога (настройка платформы platform.billing). Пополнить — POST /v1/workspaces/{ws}/platform/purchases.
+    /// - `platform.balance_low` — Баланс платформы для разработчиков этим списанием опустился ниже порога (настройка платформы platform.billing). Пополняет владелец или админ организации в кабинете (раздел «Платформа»); остаток — GET /v1/workspaces/{ws}/platform/balance.
     /// - `platform.balance_exhausted` — Баланс платформы кончился этим списанием: следующие вызовы по ключам и автоматизации получат 402 platform_balance_exhausted.
     /// - `platform.cap_threshold_reached` — Траты платформы за месяц дошли до порога месячного потолка (spend.alert_thresholds_pct, по умолчанию 80%). Один раз на порог за месяц.
     /// - `onec.connection.changed` — Программа Tungo в офисе (связь с 1С компании) вышла на связь или пропала. reason — почему пропала: device_revoked (устройство отозвали), replaced (подключилась другая копия или привязано другое устройство), key_rotated (сменён ключ — программа сразу переподключится), access_lost (компания отключена, организация заблокирована), no_heartbeat (не отвечала на проверку связи), connection_lost (связь оборвалась: компьютер выключен, сеть), handshake_failed, server_unavailable, server_shutdown (сервер Tungo перезапускается — программа переподключится сама). Пока программы нет на связи, запись в 1С не идёт.
@@ -514,8 +512,6 @@ public struct WebhooksResource: Sendable {
     /// - `proposal.awaiting_approval` — Предложение (документ для 1С) готово и ждёт одобрения. blocked — есть блокеры, одобрить пока нельзя.
     /// - `proposal.written` — Предложение записано в 1С (документ создан или дополнен). onec_document_number — номер документа в 1С.
     /// - `proposal.failed` — Записать предложение в 1С не удалось. Причина — в карточке предложения (GET /v1/companies/{co}/proposals/{id}).
-    /// - `payment.succeeded` — Оплата Tungo картой прошла (подписка, пополнение, подключение компании). Суммы — в тиынах.
-    /// - `payment.failed` — Оплата Tungo картой не прошла. Суммы — в тиынах.
     /// - `automation.run.completed` — Запуск автоматизации закончился успешно. Итог для внешней системы: proposals — что подготовлено и записано в 1С (сумма, номер и дата документа), output — итог в форме сценария (output). Канал сообщения — id сценария (scn_…): адрес вебхука с channels получает только свои сценарии. Ход и ответ — в журнале запусков (GET /v1/companies/{co}/automations/runs).
     /// - `automation.run.failed` — Запуск автоматизации закончился ошибкой (или его процесс замолчал). Его можно повторить. Сюда же — сбой опроса DirectBank (action: directbank): 1С недоступна, подключение не оплачено, сбой разбора. Каждая попытка — своё событие (attempt).
     /// - `esf.incoming.received` — Входящие ЭСФ получены из ИС ЭСФ и разобраны пачкой (POST /v1/companies/{co}/batch/esf-purchases): сколько ЭСФ и сколько предложений поступления создано.
@@ -526,7 +522,7 @@ public struct WebhooksResource: Sendable {
     /// - `automation.write_unknown` — Автоодобрение по правилу сценария писало документ в 1С, а исход записи неизвестен: 1С не ответила или процесс прервался посреди записи (запуск закрыт как брошенный — и тогда, когда сценарий удалили). Сумма остаётся в дневных потолках, повтор запуска ищет документ по метке [AI P-…] и второго не создаст. Проверьте документ в 1С или нажмите «Записать» в карточке предложения.
     /// - `automation.run.notice` — Шаг notify цепочки сценария: разработчику — что запуск дошёл до уведомления и почему (reason — условие шага: checks_found_issues — проверки нашли ошибки, previous_created_proposals — прошлый шаг подготовил предложения, previous_failed — прошлый шаг упал, always). Только номера и счётчики; подробности — GET /v1/companies/{co}/automations/runs/{id}. Канал сообщения — id сценария (scn_…).
     /// - `chat.turn.completed` — Ход чата по ключу API закончился, история записана. Только по факту хода, начатого ключом; ход из кабинета события не шлёт. Текста ответа и персональных данных в теле нет — ответ читайте по dialog_url. Ответ на вопрос ИИ (stop_reason был awaiting_user) — новое событие с тем же turn_no.
-    /// - `platform.balance_low` — Баланс платформы для разработчиков этим списанием опустился ниже порога (настройка платформы platform.billing). Пополнить — POST /v1/workspaces/{ws}/platform/purchases.
+    /// - `platform.balance_low` — Баланс платформы для разработчиков этим списанием опустился ниже порога (настройка платформы platform.billing). Пополняет владелец или админ организации в кабинете (раздел «Платформа»); остаток — GET /v1/workspaces/{ws}/platform/balance.
     /// - `platform.balance_exhausted` — Баланс платформы кончился этим списанием: следующие вызовы по ключам и автоматизации получат 402 platform_balance_exhausted.
     /// - `platform.cap_threshold_reached` — Траты платформы за месяц дошли до порога месячного потолка (spend.alert_thresholds_pct, по умолчанию 80%). Один раз на порог за месяц.
     /// - `onec.connection.changed` — Программа Tungo в офисе (связь с 1С компании) вышла на связь или пропала. reason — почему пропала: device_revoked (устройство отозвали), replaced (подключилась другая копия или привязано другое устройство), key_rotated (сменён ключ — программа сразу переподключится), access_lost (компания отключена, организация заблокирована), no_heartbeat (не отвечала на проверку связи), connection_lost (связь оборвалась: компьютер выключен, сеть), handshake_failed, server_unavailable, server_shutdown (сервер Tungo перезапускается — программа переподключится сама). Пока программы нет на связи, запись в 1С не идёт.
@@ -747,47 +743,5 @@ public struct WebhooksResource: Sendable {
         var spec = RequestSpec(method: "POST", path: path, idempotent: true)
         spec.body = try core.encode(body)
         return try await core.sendEmpty(spec, options: options)
-    }
-
-    /// Счётчик событий месяца
-    ///
-    /// Сколько событий ушло за месяц и сколько не ушло сверх бесплатного числа тарифа (webhooks.monthly_free_messages). Считаются только события, которые есть кому получить: включённый адрес с подходящим фильтром типов и каналов. Не ушедшие не досылаются.
-    ///
-    /// Доступ: Владелец или админ workspace; ключ API — с правом webhooks.manage.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/workspaces/{ws}/webhooks/usage` - permission `Владелец или админ workspace; ключ API — с правом webhooks.manage`
-    ///
-    /// - Parameters:
-    ///   - workspaceID: The workspace; the client's `workspaceID` when `nil`.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getUsage(workspaceID: String? = nil, options: RequestOptions = RequestOptions()) async throws -> WebhookUsage {
-        try await getUsageWithResponse(workspaceID: workspaceID, options: options).value
-    }
-
-    /// Счётчик событий месяца
-    ///
-    /// Сколько событий ушло за месяц и сколько не ушло сверх бесплатного числа тарифа (webhooks.monthly_free_messages). Считаются только события, которые есть кому получить: включённый адрес с подходящим фильтром типов и каналов. Не ушедшие не досылаются.
-    ///
-    /// Доступ: Владелец или админ workspace; ключ API — с правом webhooks.manage.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/workspaces/{ws}/webhooks/usage` - permission `Владелец или админ workspace; ключ API — с правом webhooks.manage`
-    ///
-    /// The same call as `getUsage`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - workspaceID: The workspace; the client's `workspaceID` when `nil`.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getUsageWithResponse(workspaceID: String? = nil, options: RequestOptions = RequestOptions()) async throws -> APIResponse<WebhookUsage> {
-        let path = "/v1/workspaces/" + (try core.workspaceSegment(workspaceID)) + "/webhooks/usage"
-        let spec = RequestSpec(method: "GET", path: path)
-        return try await core.send(spec, options: options, as: WebhookUsage.self)
     }
 }

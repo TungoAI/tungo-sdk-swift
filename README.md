@@ -3,9 +3,9 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TungoAI/.github/main/assets/logo02.svg" />
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/TungoAI/.github/main/assets/logo03.svg" />
-  <img alt="Tungo AI" src="https://raw.githubusercontent.com/TungoAI/.github/main/assets/logo03.svg" width="240" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TungoAI/tungo-sdk-swift/main/.github/logo-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/TungoAI/tungo-sdk-swift/main/.github/logo.svg" />
+  <img alt="Tungo AI" src="https://raw.githubusercontent.com/TungoAI/tungo-sdk-swift/main/.github/logo.svg" width="240" />
 </picture>
 
 # Tungo SDK for Swift
@@ -18,7 +18,7 @@
 
 **English** · [Русский](https://github.com/TungoAI/tungo-sdk-swift/blob/main/README.ru.md) · [Қазақша](https://github.com/TungoAI/tungo-sdk-swift/blob/main/README.kk.md)
 
-[tungo.kz](https://tungo.kz) · [Quick start](#quick-start) · [API reference](#api-reference) · [Changelog](https://github.com/TungoAI/tungo-sdk-swift/blob/main/CHANGELOG.md) · [Issues](https://github.com/TungoAI/tungo-sdk-swift/issues)
+[tungo.kz](https://tungo.kz) · [Quick start](#quick-start) · [API reference](#api-reference) · [Changelog](https://github.com/TungoAI/tungo-sdk-swift/blob/main/CHANGELOG.md) · [Support](https://app.tungo.kz)
 
 </div>
 
@@ -38,7 +38,7 @@ Add the package to the dependencies of your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/TungoAI/tungo-sdk-swift.git", from: "1.0.0")
+    .package(url: "https://github.com/TungoAI/tungo-sdk-swift.git", from: "2.0.0")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "TungoSDK", package: "tungo-sdk-swift")])
@@ -217,6 +217,24 @@ Nothing is read before the first iteration and events are read one chunk at a ti
 
 `collect()` throws `DecodeError` when the stream ends without its final `done` event (the partial text is in the error's `body`), so a cut connection never looks like a finished answer; the plain loop simply ends. A 2xx answer to a streaming call that is not `text/event-stream` is a `DecodeError` as well. The exception is a finished chat turn that the API replays for a repeated `Idempotency-Key` (`application/json` with `Idempotent-Replayed: true`): its stored result arrives as the events of that turn, ending with `next` (follow-ups and the next action, when it has them) and `done`.
 
+## File downloads
+
+The operations that answer with a file (`chat.download_file` for the Excel, Word, PDF and CSV files the AI built, `proposals.export` and `batches.export` as xlsx, csv or pdf) return the downloaded file: its bytes, the file name from the `Content-Disposition` header (the UTF-8 `filename*` when present, otherwise `filename`; none when the server sent no name) and the `Content-Type`. The whole file is read into memory. Errors, retries and timeouts are the same as for every other request. The file name is the server's suggestion, not a safe path: do not use it to build one unchecked.
+
+```swift
+let client = TungoClient(apiKey: "tg_...", companyID: "co_...")
+
+let file = try await client.proposals.export(id: "P-000042", format: .pdf)
+print(file.filename ?? "-", file.contentType ?? "-", file.content.count, file.requestID ?? "-")
+
+// The name is the server's suggestion: keep only its last path component.
+let name = file.filename.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "proposal.pdf"
+let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+try file.content.write(to: url)
+```
+
+`chat.downloadFile`, `proposals.export` and `batches.export` return a `DownloadedFile` (`content: Data`, `filename`, `contentType`, `headers`, `requestID`; its `description` shows the size, never the bytes); the `...WithResponse` variants wrap it in an `APIResponse`. They send `Accept: */*`; an error answer is the usual `APIError`. `DownloadedFile.filename(contentDisposition:)` is the parser of the file name.
+
 ## Webhooks
 
 Outgoing webhooks are signed according to the Standard Webhooks specification (Svix). The verify helper takes the raw request body and the headers (`webhook-*` or `svix-*`), checks the HMAC-SHA256 signature in constant time and the timestamp within 300 s of the system clock, and returns the typed event. Any problem is reported as a webhook verification error. If no secret is passed, the client's webhook secret is used.
@@ -277,29 +295,27 @@ Every schema of the contract is a `Codable`, `Hashable`, `Sendable` struct or en
 
 ## Examples
 
-The [Examples](Examples) directory holds runnable programs (`swift run TungoQuickStartExample`, `TungoStreamingChatExample`, `TungoVerifyWebhookExample`). They and every snippet of this README are compiled by CI; the snippets are also run by the test suite.
+The [Examples](https://github.com/TungoAI/tungo-sdk-swift/blob/main/Examples) directory holds runnable programs (`swift run TungoQuickStartExample`, `TungoStreamingChatExample`, `TungoVerifyWebhookExample`). They and every snippet of this README are compiled by CI; the snippets are also run by the test suite.
 
 ## API reference
 
-Generated from the Tungo Platform API contract: **15 resources, 100 methods, 22 webhook event types**.
+Generated from the Tungo Platform API contract: **13 resources, 83 methods, 20 webhook event types**.
 
 | Resource | Description | Methods |
 | --- | --- | --- |
-| `client.workspaces` | Organisations (workspaces) the API key can access | `list` |
+| `client.workspaces` | Organisations (workspaces) the API key can access, and the platform balance | `list` · `getBalance` |
 | `client.companies` | Companies of an organisation and their profiles | `list` · `get` |
-| `client.platform` | Platform balance, ledger, usage reports, limits, audit log and model rates | `listUsageRates` · `getAccount` · `getAudit / getAuditAll` · `getLedger / getLedgerAll` · `listLimits` · `listRequests / listRequestsAll` · `getUsage` |
-| `client.apiKeys` | The current API key and its usage statistics | `getCurrent` · `getCurrentUsage` · `getUsage` |
-| `client.webhooks` | Outgoing webhooks of an organisation (Svix): endpoints, event catalogue, deliveries and signature check | `listEndpoints / listEndpointsAll` · `createEndpoint` · `getEndpoint` · `updateEndpoint` · `deleteEndpoint` · `listEndpointAttempts / listEndpointAttemptsAll` · `rotateEndpointSecret` · `testEndpoint` · `listEventTypes` · `listMessages / listMessagesAll` · `listMessageAttempts / listMessageAttemptsAll` · `resendMessage` · `getUsage` |
-| `client.chat` | Conversations with the AI accountant: questions, streaming chat (SSE), token counting and history | `list / listAll` · `create / createStream` · `countTokens` · `listFiles / listFilesAll` · `listMentions` · `getRatingOptions` · `listSuggestions` · `createUpload` · `deleteUpload` · `putUploadPart` · `get` · `update` · `delete` · `answer / answerStream` · `listEvents` · `rateMessage` · `deleteMessageRating` · `rate` · `dismissRating` · `stop` · `translateThinking` |
-| `client.proposals` | Documents proposed by the AI accountant: review, approval for posting to 1C, and rejection | `list / listAll` · `approveBatch` · `get` · `approve` · `reject` · `requestApproval` |
+| `client.apiKeys` | The current API key: permissions, expiry, spend this month and why calls would be refused | `getCurrent` |
+| `client.webhooks` | Outgoing webhooks of an organisation (Svix): endpoints, event catalogue, deliveries and signature check | `listEndpoints / listEndpointsAll` · `createEndpoint` · `getEndpoint` · `updateEndpoint` · `deleteEndpoint` · `listEndpointAttempts / listEndpointAttemptsAll` · `rotateEndpointSecret` · `testEndpoint` · `listEventTypes` · `listMessages / listMessagesAll` · `listMessageAttempts / listMessageAttemptsAll` · `resendMessage` |
+| `client.chat` | Conversations with the AI accountant: questions, streaming chat (SSE), token counting and history | `list / listAll` · `create / createStream` · `countTokens` · `listFiles / listFilesAll` · `createUpload` · `deleteUpload` · `putUploadPart` · `get` · `delete` · `answer / answerStream` · `listEvents` · `downloadFile` · `stop` |
+| `client.proposals` | Documents proposed by the AI accountant: review, approval for posting to 1C, and rejection | `list / listAll` · `approveBatch` · `get` · `approve` · `export` · `reject` · `requestApproval` |
 | `client.feed` | The company's feed of events and proposals (pages and a live SSE stream) | `get / getAll` · `listEvents` |
-| `client.batches` | Processing batches for bank statements, incoming e-invoices and DirectBank | `list / listAll` · `createBankStatement` · `createEsfPurchases` · `get` · `listEvents` · `stop` · `getSummary` · `listStatements / listStatementsAll` · `pollDirectbank` |
+| `client.batches` | Processing batches for bank statements, incoming e-invoices and DirectBank | `list / listAll` · `createBankStatement` · `createEsfPurchases` · `get` · `listEvents` · `export` · `stop` · `getSummary` · `listStatements / listStatementsAll` · `pollDirectbank` |
 | `client.esf` | Incoming and outgoing electronic invoices (the ESF system) | `getIncoming / getIncomingAll` · `getOutgoing / getOutgoingAll` |
 | `client.forms` | Tax forms (FNO 100.00 and others): building, ISNA checks and data gaps | `list` · `build` · `listDataGaps` · `getIsna` · `listNotes` |
 | `client.onec` | Status of the company's connection to its 1C database | `getStatus` |
-| `client.automations` | Company automations: incoming hooks, scenarios, step chains, runs and the AI autonomy level | `postHook` · `listHooks` · `createHook` · `getHook` · `updateHook` · `deleteHook` · `rotateHook` · `testHook` · `listRuns / listRunsAll` · `getRun` · `cancelRun` · `retryRun` · `listScenarios` · `createScenario` · `getScenario` · `putScenario` · `updateScenario` · `deleteScenario` · `runScenario` · `getState` · `putState` · `getAutonomy` · `putAutonomy` |
+| `client.automations` | Company automations: incoming hooks, scenarios, step chains, runs and the AI autonomy level | `postHook` · `listHooks` · `createHook` · `getHook` · `updateHook` · `deleteHook` · `rotateHook` · `testHook` · `listRuns / listRunsAll` · `getRun` · `cancelRun` · `retryRun` · `listScenarios` · `createScenario` · `getScenario` · `putScenario` · `updateScenario` · `deleteScenario` · `runScenario` · `getState` · `putState` · `getAutonomy` |
 | `client.verification` | Public verification of the electronic signature of Tungo documents: by code, by file, by QR block, and the signing keys (no API key needed) | `listKeys` · `verifyQr` · `get` · `check` |
-| `client.releases` | Public list of downloads: the 1C extension and Tungo Connector (no API key needed) | `list` |
 
 ## Other SDKs
 
@@ -309,7 +325,7 @@ The same API is available in ten languages. All SDKs are generated from one cont
 | --- | --- | --- |
 | TypeScript | [tungo-sdk-typescript](https://github.com/TungoAI/tungo-sdk-typescript) | `@tungoai/sdk` |
 | Python | [tungo-sdk-python](https://github.com/TungoAI/tungo-sdk-python) | `tungoai` |
-| Go | [tungo-sdk-go](https://github.com/TungoAI/tungo-sdk-go) | `github.com/TungoAI/tungo-sdk-go` |
+| Go | [tungo-sdk-go](https://github.com/TungoAI/tungo-sdk-go) | `github.com/TungoAI/tungo-sdk-go/v2` |
 | Rust | [tungo-sdk-rust](https://github.com/TungoAI/tungo-sdk-rust) | `tungo-sdk` |
 | PHP | [tungo-sdk-php](https://github.com/TungoAI/tungo-sdk-php) | `tungo/sdk` |
 | Java | [tungo-sdk-java](https://github.com/TungoAI/tungo-sdk-java) | `kz.tungo:tungo-sdk` |
@@ -320,9 +336,9 @@ The same API is available in ten languages. All SDKs are generated from one cont
 
 ## Versioning and support
 
-This library follows [Semantic Versioning](https://semver.org/). Minor and patch releases are backwards compatible: the API grows by additions, and a field or method that is to go away is first marked deprecated and kept for at least six months. Breaking changes come only in a new major version and are listed, with migration notes, in the [changelog](https://github.com/TungoAI/tungo-sdk-swift/blob/main/CHANGELOG.md). This README describes version 1.0.0.
+This library follows [Semantic Versioning](https://semver.org/). Minor and patch releases are backwards compatible: the API grows by additions, and a field or method that is to go away is first marked deprecated and kept for at least six months. Breaking changes come only in a new major version and are listed, with migration notes, in the [changelog](https://github.com/TungoAI/tungo-sdk-swift/blob/main/CHANGELOG.md). This README describes version 2.0.0.
 
-The code is generated: please report problems and ideas in the [issue tracker](https://github.com/TungoAI/tungo-sdk-swift/issues) rather than opening pull requests against generated files. To report a vulnerability, follow the [security policy](https://github.com/TungoAI/tungo-sdk-swift/blob/main/SECURITY.md).
+Questions and problems go to support in the [Tungo personal cabinet](https://app.tungo.kz). The code is generated from the API contract and a change to a generated file is overwritten by the next generation, so describe the change you need in your request rather than opening a pull request. To report a vulnerability, follow the [security policy](https://github.com/TungoAI/tungo-sdk-swift/blob/main/SECURITY.md).
 
 ## License
 

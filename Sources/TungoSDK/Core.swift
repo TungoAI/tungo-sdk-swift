@@ -323,11 +323,19 @@ final class ClientCore: Sendable {
         return APIResponse(value: EmptyResponse(), statusCode: result.statusCode, headers: result.headers)
     }
 
+    /// Downloads a file: any media type is accepted (`Accept: */*`) and the body is kept as bytes.
+    /// Retries, timeouts and errors are those of every other call; the timeout covers the whole body.
+    func download(_ spec: RequestSpec, options: RequestOptions) async throws -> APIResponse<DownloadedFile> {
+        let result = try await perform(spec, options: options, accept: "*/*")
+        let file = DownloadedFile(content: result.body, headers: result.headers)
+        return APIResponse(value: file, statusCode: result.statusCode, headers: result.headers)
+    }
+
     /// Sends a request with retries and returns the buffered successful response.
-    func perform(_ spec: RequestSpec, options: RequestOptions) async throws -> Buffered {
+    func perform(_ spec: RequestSpec, options: RequestOptions, accept: String = "application/json") async throws -> Buffered {
         let limit = try timeLimit(options.timeout ?? (spec.longRunning ? chatTimeout : timeout))
         let transport = self.transport
-        return try await withRetries(spec, options: options, accept: "application/json", idleTimeout: limit) { request in
+        return try await withRetries(spec, options: options, accept: accept, idleTimeout: limit) { request in
             do {
                 return try await ClientCore.withDeadline(limit) {
                     let response = try await transport.send(request)

@@ -119,7 +119,7 @@ enum Fixture {
     static let decision = #"{"message":"ok","ok":true,"repeated":false}"#
     static let deleted = #"{"deleted":true,"id":"d1"}"#
     static let state = #"{"paused":true,"paused_at":null,"queued":0,"reason":null,"running":0}"#
-    static let usageRates = #"{"data":[]}"#
+    static let verifyKeys = #"{"keys":[]}"#
     static let hookAccepted = #"{"accepted":true,"duplicate":false,"event_id":"evt_1","run_ids":["run_1"]}"#
     static let turn = #"{"answer":"The VAT is 5 400.","citations":[],"dialog_id":"dlg_1","errors":[],"files":[],"followups":[],"pending_question":null,"proposals":[],"questions":[],"stop_reason":"end_turn","turn_no":3}"#
 

@@ -255,6 +255,66 @@ public struct BatchesResource: Sendable {
         return EventStream(response: response, decoding: ChatEvent.self, errorIsEvent: true)
     }
 
+    /// Скачать результат задания файлом
+    ///
+    /// Разбор выписки или пачки ЭСФ таблицей: лист «Документы» — строка, предложение, статус, сумма, предупреждения, что мешает записи (и строки, которые решает человек); лист «Выписка» — счёт, банк, период и остатки (только у задания по файлу выписки). Данные те же, что в сводке задания, на момент скачивания; номер счёта — только со скрытой серединой. Скачать может любой участник компании с правом company.read, не только автор задания; по ключу API — только задание, начатое этим ключом (чужое — 404). Ответ — сам файл (Content-Disposition: attachment, имя — латиницей из номера: tungo-….xlsx, .csv или .pdf). Ячейки формулами не становятся: в Excel пишутся только текст и числа, в CSV значение, начинающееся с = + - @, получает апостроф, в PDF всё — текст. Суммы — тенге числом, даты — ГГГГ-ММ-ДД, во всех форматах одинаково.
+    ///
+    /// Доступ: company.read.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/batch/{id}/export` - permission `company.read`
+    ///
+    /// Downloads a file. The whole file is read into memory; the call sends `Accept: */*`.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: id задания пачки (bat_…) — поле id из ответа запуска задания, из GET …/batch или batch_id из ленты
+    ///   - format: Формат файла: xlsx — Excel (все листы); csv — первый лист (UTF-8 с BOM, разделитель — точка с запятой); pdf — все листы разделами на A4 (application/pdf, шрифт вложен: кириллица и казахские буквы). По умолчанию xlsx
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The downloaded file: its bytes, the file name of the `Content-Disposition` header, the `Content-Type` and the request id.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func export(
+        companyID: String? = nil,
+        id: String,
+        format: GetCompanyBatchExportFormat? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> DownloadedFile {
+        try await exportWithResponse(companyID: companyID, id: id, format: format, options: options).value
+    }
+
+    /// Скачать результат задания файлом
+    ///
+    /// Разбор выписки или пачки ЭСФ таблицей: лист «Документы» — строка, предложение, статус, сумма, предупреждения, что мешает записи (и строки, которые решает человек); лист «Выписка» — счёт, банк, период и остатки (только у задания по файлу выписки). Данные те же, что в сводке задания, на момент скачивания; номер счёта — только со скрытой серединой. Скачать может любой участник компании с правом company.read, не только автор задания; по ключу API — только задание, начатое этим ключом (чужое — 404). Ответ — сам файл (Content-Disposition: attachment, имя — латиницей из номера: tungo-….xlsx, .csv или .pdf). Ячейки формулами не становятся: в Excel пишутся только текст и числа, в CSV значение, начинающееся с = + - @, получает апостроф, в PDF всё — текст. Суммы — тенге числом, даты — ГГГГ-ММ-ДД, во всех форматах одинаково.
+    ///
+    /// Доступ: company.read.
+    ///
+    /// Доступно по ключу API.
+    ///
+    /// `GET /v1/companies/{co}/batch/{id}/export` - permission `company.read`
+    ///
+    /// The same call as `export`, returning the HTTP metadata as well.
+    ///
+    /// - Parameters:
+    ///   - companyID: The company; the client's `companyID` when `nil`.
+    ///   - id: id задания пачки (bat_…) — поле id из ответа запуска задания, из GET …/batch или batch_id из ленты
+    ///   - format: Формат файла: xlsx — Excel (все листы); csv — первый лист (UTF-8 с BOM, разделитель — точка с запятой); pdf — все листы разделами на A4 (application/pdf, шрифт вложен: кириллица и казахские буквы). По умолчанию xlsx
+    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
+    /// - Returns: The downloaded file with the status, headers, request id and rate-limit state of the response.
+    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
+    public func exportWithResponse(
+        companyID: String? = nil,
+        id: String,
+        format: GetCompanyBatchExportFormat? = nil,
+        options: RequestOptions = RequestOptions()
+    ) async throws -> APIResponse<DownloadedFile> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/batch/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/export"
+        var query = QueryBuilder()
+        query.add("format", format)
+        let spec = RequestSpec(method: "GET", path: path, query: query)
+        return try await core.download(spec, options: options)
+    }
+
     /// Остановить задание
     ///
     /// Начатые строки дорабатываются, новые не берутся; повторный запуск возьмёт оставшиеся.

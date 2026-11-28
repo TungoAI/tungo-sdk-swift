@@ -299,178 +299,6 @@ public struct ChatResource: Sendable {
         PageSequence { try await self.listFiles(companyID: companyID, cursor: cursor, dialogID: dialogID, format: format, limit: limit, q: q, options: options) }
     }
 
-    /// Что можно упомянуть через «@»
-    ///
-    /// Поиск для списка упоминаний в поле ввода. Находит только то, что человек вправе открыть: предложения и задания — по праву company.read (задания — всех авторов компании; по ключу API — только начатые этим ключом), контрагентов — в 1С этой компании. Модель не вызывается.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/companies/{co}/chat/mentions` - permission `chat.use`
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - limit: Сколько на каждый вид: 1–20, по умолчанию 8
-    ///   - q: Что ищем: часть номера, названия, имени; у контрагента — от 2 знаков (или БИН цифрами). Пусто — свежие предложения и задания
-    ///   - types: Виды через запятую; по умолчанию все. `proposal` — предложение (документ для 1С), id — его номер P-000123; `counterparty` — контрагент из 1С компании, id — его ссылка из поиска; `batch` — задание пачки (разбор выписки, в…
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func listMentions(
-        companyID: String? = nil,
-        limit: Int? = nil,
-        q: String? = nil,
-        types: String? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ChatMentionSearch {
-        try await listMentionsWithResponse(companyID: companyID, limit: limit, q: q, types: types, options: options).value
-    }
-
-    /// Что можно упомянуть через «@»
-    ///
-    /// Поиск для списка упоминаний в поле ввода. Находит только то, что человек вправе открыть: предложения и задания — по праву company.read (задания — всех авторов компании; по ключу API — только начатые этим ключом), контрагентов — в 1С этой компании. Модель не вызывается.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/companies/{co}/chat/mentions` - permission `chat.use`
-    ///
-    /// The same call as `listMentions`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - limit: Сколько на каждый вид: 1–20, по умолчанию 8
-    ///   - q: Что ищем: часть номера, названия, имени; у контрагента — от 2 знаков (или БИН цифрами). Пусто — свежие предложения и задания
-    ///   - types: Виды через запятую; по умолчанию все. `proposal` — предложение (документ для 1С), id — его номер P-000123; `counterparty` — контрагент из 1С компании, id — его ссылка из поиска; `batch` — задание пачки (разбор выписки, в…
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func listMentionsWithResponse(
-        companyID: String? = nil,
-        limit: Int? = nil,
-        q: String? = nil,
-        types: String? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatMentionSearch> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/mentions"
-        var query = QueryBuilder()
-        query.add("limit", limit)
-        query.add("q", q)
-        query.add("types", types)
-        let spec = RequestSpec(method: "GET", path: path, query: query)
-        return try await core.send(spec, options: options, as: ChatMentionSearch.self)
-    }
-
-    /// Что нужно форме оценки: причины «вниз» и предел комментария
-    ///
-    /// Причины задаёт настройка платформы; названия — на языке lang. Список меняется редко: достаточно прочитать раз за сеанс.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/companies/{co}/chat/rating-options` - permission `chat.use`
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - lang: Язык названий причин; по умолчанию ru
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getRatingOptions(
-        companyID: String? = nil,
-        lang: ListCompanyChatRatingOptionsLang? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ChatRatingOptions {
-        try await getRatingOptionsWithResponse(companyID: companyID, lang: lang, options: options).value
-    }
-
-    /// Что нужно форме оценки: причины «вниз» и предел комментария
-    ///
-    /// Причины задаёт настройка платформы; названия — на языке lang. Список меняется редко: достаточно прочитать раз за сеанс.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/companies/{co}/chat/rating-options` - permission `chat.use`
-    ///
-    /// The same call as `getRatingOptions`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - lang: Язык названий причин; по умолчанию ru
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func getRatingOptionsWithResponse(
-        companyID: String? = nil,
-        lang: ListCompanyChatRatingOptionsLang? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatRatingOptions> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/rating-options"
-        var query = QueryBuilder()
-        query.add("lang", lang)
-        let spec = RequestSpec(method: "GET", path: path, query: query)
-        return try await core.send(spec, options: options, as: ChatRatingOptions.self)
-    }
-
-    /// Подсказки пустого чата
-    ///
-    /// Что спросить в этой компании сейчас: разделы и карточки с готовыми текстами — кабинет рисует их как есть. Содержимое — настройка платформы, меняется без выката. Набор зависит от того, подключена ли 1С, есть ли документы, ждущие решения, от прав человека и от календаря: сезонные карточки появляются в свои недели сами, годы, кварталы и месяцы в текстах подставлены на сегодня по времени Алматы. Модель не вызывается, расхода нет.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/companies/{co}/chat/suggestions` - permission `chat.use`
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - lang: Язык текстов — язык интерфейса кабинета. Не передан — язык ответов ИИ из профиля (`kk` — по-казахски, иначе по-русски)
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func listSuggestions(
-        companyID: String? = nil,
-        lang: ListCompanyChatSuggestionsLang? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ChatSuggestions {
-        try await listSuggestionsWithResponse(companyID: companyID, lang: lang, options: options).value
-    }
-
-    /// Подсказки пустого чата
-    ///
-    /// Что спросить в этой компании сейчас: разделы и карточки с готовыми текстами — кабинет рисует их как есть. Содержимое — настройка платформы, меняется без выката. Набор зависит от того, подключена ли 1С, есть ли документы, ждущие решения, от прав человека и от календаря: сезонные карточки появляются в свои недели сами, годы, кварталы и месяцы в текстах подставлены на сегодня по времени Алматы. Модель не вызывается, расхода нет.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `GET /v1/companies/{co}/chat/suggestions` - permission `chat.use`
-    ///
-    /// The same call as `listSuggestions`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - lang: Язык текстов — язык интерфейса кабинета. Не передан — язык ответов ИИ из профиля (`kk` — по-казахски, иначе по-русски)
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func listSuggestionsWithResponse(
-        companyID: String? = nil,
-        lang: ListCompanyChatSuggestionsLang? = nil,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatSuggestions> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/suggestions"
-        var query = QueryBuilder()
-        query.add("lang", lang)
-        let spec = RequestSpec(method: "GET", path: path, query: query)
-        return try await core.send(spec, options: options, as: ChatSuggestions.self)
-    }
-
     /// Начать загрузку архива к сообщению
     ///
     /// Архив (.zip, .rar, .7z) до 100 МБ одним телом не проходит (предел тела у прокси), поэтому — по частям: начать здесь, прислать части PUT …/parts/{n}, затем отправить сообщение с attachments: [{ "upload_id": "…" }]. Ход, принявший архив, удаляет загрузку; брошенная удаляется по сроку. Видит загрузку только тот, кто её начал (человек или ключ), в этой компании; одновременно — до 3 загрузок. Лимит тарифа проверяется сразу (402/429, как у сообщения). error.code: upload_part_invalid (имя не архива, размер), file_too_large, too_many_uploads (429), uploads_unavailable (503).
@@ -679,63 +507,6 @@ public struct ChatResource: Sendable {
         return try await core.send(spec, options: options, as: ChatDialog.self)
     }
 
-    /// Переименовать свой разговор
-    ///
-    /// Название видно в списке разговоров и в карточке разговора. Пустая строка — вернуть автоматическое название (от ИИ, а пока его нет — первый вопрос). Пока ход идёт на другом сервере Tungo — 409 turn_in_progress (повторить после ответа); разговор только что изменился — 409 dialog_changed.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `PATCH /v1/companies/{co}/chat/{id}` - permission `chat.use`
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - body: The request body.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func update(
-        companyID: String? = nil,
-        id: String,
-        body: ChatDialogPatch,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ChatDialogRenamed {
-        try await updateWithResponse(companyID: companyID, id: id, body: body, options: options).value
-    }
-
-    /// Переименовать свой разговор
-    ///
-    /// Название видно в списке разговоров и в карточке разговора. Пустая строка — вернуть автоматическое название (от ИИ, а пока его нет — первый вопрос). Пока ход идёт на другом сервере Tungo — 409 turn_in_progress (повторить после ответа); разговор только что изменился — 409 dialog_changed.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `PATCH /v1/companies/{co}/chat/{id}` - permission `chat.use`
-    ///
-    /// The same call as `update`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - body: The request body.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func updateWithResponse(
-        companyID: String? = nil,
-        id: String,
-        body: ChatDialogPatch,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatDialogRenamed> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id"))
-        var spec = RequestSpec(method: "PATCH", path: path)
-        spec.body = try core.encode(body)
-        return try await core.send(spec, options: options, as: ChatDialogRenamed.self)
-    }
-
     /// Стереть свой разговор
     ///
     /// Стирается по-настоящему; идущий ход останавливается. Предложения из разговора остаются в очереди.
@@ -912,230 +683,62 @@ public struct ChatResource: Sendable {
         return EventStream(response: response, decoding: ChatEvent.self, errorIsEvent: true)
     }
 
-    /// Оценить ответ ИИ: палец вверх или вниз
+    /// Скачать файл, собранный ИИ
     ///
-    /// Один голос на ответ: повторный PUT заменяет оценку (так же дописывают причину и комментарий). Оценить можно только законченный ответ своего разговора; идущий ход и несуществующий номер — 404 message_not_found. Поставленная оценка возвращается в истории (rating у сообщения). Отказы: 400 rating_comment_too_long — комментарий длиннее предела; 400 rating_reason_unknown — такой причины нет в списке; 400 rating_reason_not_allowed — причина у оценки up; 404 — разговор чужой или не найден.
+    /// Файл из события file (и блока file истории): Excel, Word, PDF или CSV. Скачать может только владелец разговора — как сам разговор; удалили разговор — файла больше нет (404). Ответ — сам файл: Content-Disposition attachment, русское имя — в filename* (UTF-8), латинское запасное — в filename. В Excel формула одна — «Итого» (СУММ), значения из 1С формулами не становятся.
     ///
     /// Доступ: chat.use.
     ///
     /// Доступно по ключу API.
     ///
-    /// `PUT /v1/companies/{co}/chat/{id}/messages/{turn}/rating` - permission `chat.use`
+    /// `GET /v1/companies/{co}/chat/{id}/files/{file}` - permission `chat.use`
+    ///
+    /// Downloads a file. The whole file is read into memory; the call sends `Accept: */*`.
     ///
     /// - Parameters:
     ///   - companyID: The company; the client's `companyID` when `nil`.
     ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - turn: Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
-    ///   - body: The request body.
+    ///   - file: id файла (file_…)
     ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
+    /// - Returns: The downloaded file: its bytes, the file name of the `Content-Disposition` header, the `Content-Type` and the request id.
     /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func rateMessage(
+    public func downloadFile(
         companyID: String? = nil,
         id: String,
-        turn: String,
-        body: ChatMessageRatingBody,
+        file: String,
         options: RequestOptions = RequestOptions()
-    ) async throws -> ChatMessageRated {
-        try await rateMessageWithResponse(companyID: companyID, id: id, turn: turn, body: body, options: options).value
+    ) async throws -> DownloadedFile {
+        try await downloadFileWithResponse(companyID: companyID, id: id, file: file, options: options).value
     }
 
-    /// Оценить ответ ИИ: палец вверх или вниз
+    /// Скачать файл, собранный ИИ
     ///
-    /// Один голос на ответ: повторный PUT заменяет оценку (так же дописывают причину и комментарий). Оценить можно только законченный ответ своего разговора; идущий ход и несуществующий номер — 404 message_not_found. Поставленная оценка возвращается в истории (rating у сообщения). Отказы: 400 rating_comment_too_long — комментарий длиннее предела; 400 rating_reason_unknown — такой причины нет в списке; 400 rating_reason_not_allowed — причина у оценки up; 404 — разговор чужой или не найден.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `PUT /v1/companies/{co}/chat/{id}/messages/{turn}/rating` - permission `chat.use`
-    ///
-    /// The same call as `rateMessage`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - turn: Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
-    ///   - body: The request body.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func rateMessageWithResponse(
-        companyID: String? = nil,
-        id: String,
-        turn: String,
-        body: ChatMessageRatingBody,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatMessageRated> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/messages/" + (try PercentEncoding.pathSegment(turn, name: "turn")) + "/rating"
-        var spec = RequestSpec(method: "PUT", path: path)
-        spec.body = try core.encode(body)
-        return try await core.send(spec, options: options, as: ChatMessageRated.self)
-    }
-
-    /// Снять свою оценку ответа
-    ///
-    /// Оценки не было — всё равно 200.
+    /// Файл из события file (и блока file истории): Excel, Word, PDF или CSV. Скачать может только владелец разговора — как сам разговор; удалили разговор — файла больше нет (404). Ответ — сам файл: Content-Disposition attachment, русское имя — в filename* (UTF-8), латинское запасное — в filename. В Excel формула одна — «Итого» (СУММ), значения из 1С формулами не становятся.
     ///
     /// Доступ: chat.use.
     ///
     /// Доступно по ключу API.
     ///
-    /// `DELETE /v1/companies/{co}/chat/{id}/messages/{turn}/rating` - permission `chat.use`
+    /// `GET /v1/companies/{co}/chat/{id}/files/{file}` - permission `chat.use`
+    ///
+    /// The same call as `downloadFile`, returning the HTTP metadata as well.
     ///
     /// - Parameters:
     ///   - companyID: The company; the client's `companyID` when `nil`.
     ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - turn: Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
+    ///   - file: id файла (file_…)
     ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
+    /// - Returns: The downloaded file with the status, headers, request id and rate-limit state of the response.
     /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func deleteMessageRating(
+    public func downloadFileWithResponse(
         companyID: String? = nil,
         id: String,
-        turn: String,
+        file: String,
         options: RequestOptions = RequestOptions()
-    ) async throws -> ChatMessageRated {
-        try await deleteMessageRatingWithResponse(companyID: companyID, id: id, turn: turn, options: options).value
-    }
-
-    /// Снять свою оценку ответа
-    ///
-    /// Оценки не было — всё равно 200.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `DELETE /v1/companies/{co}/chat/{id}/messages/{turn}/rating` - permission `chat.use`
-    ///
-    /// The same call as `deleteMessageRating`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - turn: Номер ответа: turn_no сообщения ИИ в истории (он же X-Turn-No)
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func deleteMessageRatingWithResponse(
-        companyID: String? = nil,
-        id: String,
-        turn: String,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatMessageRated> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/messages/" + (try PercentEncoding.pathSegment(turn, name: "turn")) + "/rating"
-        let spec = RequestSpec(method: "DELETE", path: path)
-        return try await core.send(spec, options: options, as: ChatMessageRated.self)
-    }
-
-    /// Оценить разговор целиком: от 1 до 5
-    ///
-    /// Повторный PUT заменяет оценку. В разговоре без единого ответа — 409 dialog_not_ratable. После оценки предложение оценить (rating_prompt) в этом разговоре больше не приходит. Отказы: 400 rating_comment_too_long — комментарий длиннее предела; 400 rating_reason_unknown — такой причины нет в списке; 400 rating_reason_not_allowed — причина у оценки up; 404 — разговор чужой или не найден.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `PUT /v1/companies/{co}/chat/{id}/rating` - permission `chat.use`
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - body: The request body.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func rate(
-        companyID: String? = nil,
-        id: String,
-        body: ChatDialogRatingBody,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ChatDialogRated {
-        try await rateWithResponse(companyID: companyID, id: id, body: body, options: options).value
-    }
-
-    /// Оценить разговор целиком: от 1 до 5
-    ///
-    /// Повторный PUT заменяет оценку. В разговоре без единого ответа — 409 dialog_not_ratable. После оценки предложение оценить (rating_prompt) в этом разговоре больше не приходит. Отказы: 400 rating_comment_too_long — комментарий длиннее предела; 400 rating_reason_unknown — такой причины нет в списке; 400 rating_reason_not_allowed — причина у оценки up; 404 — разговор чужой или не найден.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `PUT /v1/companies/{co}/chat/{id}/rating` - permission `chat.use`
-    ///
-    /// The same call as `rate`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - body: The request body.
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func rateWithResponse(
-        companyID: String? = nil,
-        id: String,
-        body: ChatDialogRatingBody,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatDialogRated> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/rating"
-        var spec = RequestSpec(method: "PUT", path: path)
-        spec.body = try core.encode(body)
-        return try await core.send(spec, options: options, as: ChatDialogRated.self)
-    }
-
-    /// Не сейчас: закрыть предложение оценить разговор
-    ///
-    /// В этом разговоре предложение больше не появится, в других — не раньше срока из настройки. Уже поставленная оценка остаётся. Тела нет.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `POST /v1/companies/{co}/chat/{id}/rating/dismiss` - permission `chat.use`
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func dismissRating(
-        companyID: String? = nil,
-        id: String,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ChatRatingDismissed {
-        try await dismissRatingWithResponse(companyID: companyID, id: id, options: options).value
-    }
-
-    /// Не сейчас: закрыть предложение оценить разговор
-    ///
-    /// В этом разговоре предложение больше не появится, в других — не раньше срока из настройки. Уже поставленная оценка остаётся. Тела нет.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `POST /v1/companies/{co}/chat/{id}/rating/dismiss` - permission `chat.use`
-    ///
-    /// The same call as `dismissRating`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func dismissRatingWithResponse(
-        companyID: String? = nil,
-        id: String,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatRatingDismissed> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/rating/dismiss"
-        let spec = RequestSpec(method: "POST", path: path)
-        return try await core.send(spec, options: options, as: ChatRatingDismissed.self)
+    ) async throws -> APIResponse<DownloadedFile> {
+        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/files/" + (try PercentEncoding.pathSegment(file, name: "file"))
+        let spec = RequestSpec(method: "GET", path: path)
+        return try await core.download(spec, options: options)
     }
 
     /// Остановить ход или закрыть открытый вопрос
@@ -1184,61 +787,5 @@ public struct ChatResource: Sendable {
         let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/stop"
         let spec = RequestSpec(method: "POST", path: path)
         return try await core.send(spec, options: options, as: ChatStopResult.self)
-    }
-
-    /// Перевести размышление на русский
-    ///
-    /// Модель часто рассуждает по-английски. Блок не по-русски приходит оригиналом с translate_id (событие thinking и thinking_parts истории); перевод — этим запросом, когда человек раскрыл шаги ответа. Перевод — вызов модели за счёт того же человека и с теми же лимитами, что ход (402/429 — как у POST …/chat); переведённый блок запоминается в разговоре — повторный запрос бесплатен (cached: true). Блок идущего хода в разговор ещё не записан — 404, повторить после ответа; перевод не получился — 503, повторить позже. Только свой разговор, как GET …/chat/{id}.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `POST /v1/companies/{co}/chat/{id}/thinking/{tid}/translate` - permission `chat.use`
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - tid: id блока размышления не по-русски (16 hex): тот же в событии thinking и в истории
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The decoded response.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func translateThinking(
-        companyID: String? = nil,
-        id: String,
-        tid: String,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> ChatThinkingTranslation {
-        try await translateThinkingWithResponse(companyID: companyID, id: id, tid: tid, options: options).value
-    }
-
-    /// Перевести размышление на русский
-    ///
-    /// Модель часто рассуждает по-английски. Блок не по-русски приходит оригиналом с translate_id (событие thinking и thinking_parts истории); перевод — этим запросом, когда человек раскрыл шаги ответа. Перевод — вызов модели за счёт того же человека и с теми же лимитами, что ход (402/429 — как у POST …/chat); переведённый блок запоминается в разговоре — повторный запрос бесплатен (cached: true). Блок идущего хода в разговор ещё не записан — 404, повторить после ответа; перевод не получился — 503, повторить позже. Только свой разговор, как GET …/chat/{id}.
-    ///
-    /// Доступ: chat.use.
-    ///
-    /// Доступно по ключу API.
-    ///
-    /// `POST /v1/companies/{co}/chat/{id}/thinking/{tid}/translate` - permission `chat.use`
-    ///
-    /// The same call as `translateThinking`, returning the HTTP metadata as well.
-    ///
-    /// - Parameters:
-    ///   - companyID: The company; the client's `companyID` when `nil`.
-    ///   - id: id разговора: dialog_id из ответа (заголовок X-Dialog-Id, поле id в списке разговоров). Обычно UUID; клиент мог задать свой (до 64 знаков A–Z, a–z, 0–9, _ и -)
-    ///   - tid: id блока размышления не по-русски (16 hex): тот же в событии thinking и в истории
-    ///   - options: Per-request options: timeout, retries, extra headers, idempotency key.
-    /// - Returns: The response with its status, headers, request id and rate-limit state.
-    /// - Throws: ``APIError`` for an error response, or another ``TungoError``.
-    public func translateThinkingWithResponse(
-        companyID: String? = nil,
-        id: String,
-        tid: String,
-        options: RequestOptions = RequestOptions()
-    ) async throws -> APIResponse<ChatThinkingTranslation> {
-        let path = "/v1/companies/" + (try core.companySegment(companyID)) + "/chat/" + (try PercentEncoding.pathSegment(id, name: "id")) + "/thinking/" + (try PercentEncoding.pathSegment(tid, name: "tid")) + "/translate"
-        let spec = RequestSpec(method: "POST", path: path)
-        return try await core.send(spec, options: options, as: ChatThinkingTranslation.self)
     }
 }
